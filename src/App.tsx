@@ -193,6 +193,9 @@ function App() {
   const [mapTarget, setMapTarget] = useState<Coordinates | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [recentIds, setRecentIds] = useState<string[]>([]);
+  const [showProfile, setShowProfile] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [profileNameDraft, setProfileNameDraft] = useState('');
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -204,6 +207,9 @@ function App() {
       setUser(tg.initDataUnsafe?.user ?? null);
     }
     try {
+      const savedProfileName = localStorage.getItem('riga-profile-name') ?? '';
+      setProfileName(savedProfileName);
+      setProfileNameDraft(savedProfileName);
       const savedFavorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? '[]');
       if (Array.isArray(savedFavorites)) setFavoriteIds(savedFavorites.filter((id): id is string => typeof id === 'string' && activeStops.some(stop => stop.id === id)));
       const savedRecent = JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]');
@@ -254,6 +260,20 @@ function App() {
     } catch (error) {
       console.warn('Не удалось сохранить сообщение на устройстве', error);
     }
+  };
+
+  const saveProfileName = () => {
+    const next = profileNameDraft.trim().slice(0, 32);
+    setProfileName(next);
+    setProfileNameDraft(next);
+    try { localStorage.setItem('riga-profile-name', next); }
+    catch (error) { console.warn('Не удалось сохранить имя профиля', error); }
+  };
+
+  const openProfileQuickList = () => {
+    setShowProfile(false);
+    setSearch('');
+    setSearchOpen(true);
   };
 
   const toggleFavorite = (stop: Stop) => {
@@ -345,7 +365,7 @@ function App() {
               <div className="brand-title"><span className="brand-mark">R</span> Riga Transit</div>
               <div className="brand-subtitle">ГОРОДСКОЙ ТРАНСПОРТ · RĪGA</div>
             </div>
-            <div className="user-chip">{user?.first_name ? `Привет, ${user.first_name}` : `★ ${favoriteIds.length} избранных`}</div>
+            <button className="user-chip profile-trigger" onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }} aria-label="Открыть профиль"><span className="profile-trigger-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase("ru-RU")}</span><span>Профиль</span><span className="profile-trigger-chevron">↗</span></button>
           </div>
           <div className="search-wrap">
             <span className="search-icon" aria-hidden="true">⌕</span>
@@ -394,6 +414,43 @@ function App() {
           )}
         </header>
       </section>
+
+      {showProfile && (
+        <div className="profile-backdrop" onClick={() => setShowProfile(false)}>
+          <section className="profile-panel glass" role="dialog" aria-modal="true" aria-labelledby="profile-title" onClick={event => event.stopPropagation()}>
+            <div className="profile-panel-top">
+              <div className="panel-eyebrow">RIGA TRANSIT · ЛИЧНОЕ ПРОСТРАНСТВО</div>
+              <button className="close-sheet" onClick={() => setShowProfile(false)} aria-label="Закрыть профиль">×</button>
+            </div>
+            <div className="profile-identity">
+              <div className="profile-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase("ru-RU")}</div>
+              <div className="profile-identity-copy">
+                <h2 id="profile-title">{profileName || [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Гость Riga Transit"}</h2>
+                <span className="profile-status"><i /> {user ? "Подключено через Telegram" : "Локальный профиль"}</span>
+              </div>
+            </div>
+            <div className="profile-name-edit">
+              <label htmlFor="profile-name">Отображаемое имя</label>
+              <div className="profile-name-row">
+                <input id="profile-name" value={profileNameDraft} maxLength={32} onChange={event => setProfileNameDraft(event.target.value)} placeholder={user?.first_name || "Как к вам обращаться"} />
+                <button onClick={saveProfileName} disabled={profileNameDraft.trim() === profileName}>Сохранить</button>
+              </div>
+              <small>Имя видно только в этом приложении на данном устройстве.</small>
+            </div>
+            <div className="profile-section-title">ВАША АКТИВНОСТЬ</div>
+            <div className="profile-stats">
+              <div className="profile-stat"><strong>{favoriteIds.length}</strong><span>Избранное</span></div>
+              <div className="profile-stat"><strong>{recentIds.length}</strong><span>Недавние</span></div>
+              <div className="profile-stat"><strong>{reports.length}</strong><span>Наблюдения</span></div>
+            </div>
+            <div className="profile-links">
+              <button onClick={openProfileQuickList}><span className="profile-link-icon">★</span><span><strong>Мои остановки</strong><small>Избранное и недавние просмотры</small></span><b>↗</b></button>
+              <button onClick={() => { setShowProfile(false); setPosition(null); setGpsState("idle"); setGpsError(""); }}><span className="profile-link-icon">◎</span><span><strong>Сбросить геолокацию</strong><small>Убрать мою позицию с карты</small></span><b>↗</b></button>
+            </div>
+            <div className="profile-footnote">Данные профиля и избранное хранятся локально. Серверная учётная запись и синхронизация пока не подключены.</div>
+          </section>
+        </div>
+      )}
 
       <div className="map-actions">
         <button className="map-action gps-button" onClick={locateMe} disabled={gpsState === 'loading'}>
