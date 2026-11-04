@@ -55,6 +55,25 @@ class GtfsImportTests(unittest.TestCase):
         self.assertEqual(shards[shard]["s1"][0],
             ["08:00:00", "3", "Daugavgrīva - Pļavnieki", "3", "weekday", "Pļavnieki", "0"])
 
+    def test_builds_deduplicated_route_stop_patterns(self):
+        tables = {
+            "routes": [{"route_id": "r1", "route_short_name": "3", "route_long_name": "Route 3", "route_type": "3"}],
+            "trips": [
+                {"trip_id": "t1", "route_id": "r1", "trip_headsign": "Center", "direction_id": "0"},
+                {"trip_id": "t2", "route_id": "r1", "trip_headsign": "Center", "direction_id": "0"},
+            ],
+            "stop_times": [
+                {"trip_id": "t1", "stop_id": "s2", "stop_sequence": "2"},
+                {"trip_id": "t1", "stop_id": "s1", "stop_sequence": "1"},
+                {"trip_id": "t2", "stop_id": "s1", "stop_sequence": "1"},
+                {"trip_id": "t2", "stop_id": "s2", "stop_sequence": "2"},
+            ],
+        }
+        patterns = import_gtfs.build_route_patterns(tables)
+        self.assertEqual(len(patterns), 1)
+        self.assertEqual([item["stopId"] for item in patterns[0]["stops"]], ["s1", "s2"])
+        self.assertEqual(patterns[0]["headsign"], "Center")
+
     def test_write_outputs_omits_monolithic_stop_times(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
