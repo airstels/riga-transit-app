@@ -750,6 +750,10 @@ function App() {
                     <div><strong>Полное расписание</strong><small>{selectedStop.name} · все отправления</small></div>
                     <button onClick={() => setScheduleViewOpen(false)} aria-label="Закрыть полное расписание">×</button>
                   </div>
+                  {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем полное расписание…</div>}
+                  {scheduleStatus === 'error' && <div className="schedule-state">Не удалось загрузить расписание. Проверьте соединение и попробуйте снова.</div>}
+                  {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-state">Загружаем календарь движения…</div>}
+                  {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">Календарь движения временно недоступен.</div>}
                   <div className="schedule-date-tabs" role="group" aria-label="Дата расписания">
                     <button className={scheduleDateOffset === 0 ? 'active' : ''} onClick={() => setScheduleDateOffset(0)}>Сегодня</button>
                     <button className={scheduleDateOffset === 1 ? 'active' : ''} onClick={() => setScheduleDateOffset(1)}>Завтра</button>
