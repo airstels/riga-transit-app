@@ -176,12 +176,15 @@ function buildDeparturesForDate(entries: TimetableEntry[], calendar: CalendarSer
   })).sort((a, b) => (a.departures[0]?.getTime() ?? 0) - (b.departures[0]?.getTime() ?? 0));
 }
 
-function transportType(type: string): string {
-  if (type === '0') return 'Трамвай';
-  if (type === '11') return 'Троллейбус';
-  if (type === '2') return 'Поезд';
-  if (type === '4') return 'Паром';
-  return 'Автобус';
+function transportType(type: string, language: AppLanguage = 'ru'): string {
+  const labels: Record<string, Record<AppLanguage, string>> = {
+    '0': { ru: 'Трамвай', lv: 'Tramvajs', en: 'Tram' },
+    '11': { ru: 'Троллейбус', lv: 'Trolejbuss', en: 'Trolleybus' },
+    '2': { ru: 'Поезд', lv: 'Vilciens', en: 'Train' },
+    '4': { ru: 'Паром', lv: 'Prāmis', en: 'Ferry' },
+    '3': { ru: 'Автобус', lv: 'Autobuss', en: 'Bus' },
+  };
+  return labels[type]?.[language] ?? labels['3'][language];
 }
 
 function minutesUntil(date: Date, now: number): number { return Math.max(0, Math.ceil((date.getTime() - now) / 60000)); }
@@ -194,16 +197,19 @@ function transportIcon(type: string): string {
   return '🚌';
 }
 
-function departureDayLabel(date: Date, now: number): string {
+function departureDayLabel(date: Date, now: number, language: AppLanguage = 'ru'): string {
   const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
-  return date.toDateString() === tomorrow.toDateString() ? 'завтра' : 'сегодня';
+  const isTomorrow = date.toDateString() === tomorrow.toDateString();
+  if (language === 'lv') return isTomorrow ? 'rīt' : 'šodien';
+  if (language === 'en') return isTomorrow ? 'tomorrow' : 'today';
+  return isTomorrow ? 'завтра' : 'сегодня';
 }
 
-function formatDeparture(date: Date, now: number): string {
-  const time = date.toLocaleTimeString(localeCode, { hour: '2-digit', minute: '2-digit' });
+function formatDeparture(date: Date, now: number, locale = 'ru-RU', language: AppLanguage = 'ru'): string {
+  const time = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  if (date.toDateString() === tomorrow.toDateString()) return `${time} · завтра`;
+  if (date.toDateString() === tomorrow.toDateString()) return `${time} · ${departureDayLabel(date, now, language)}`;
   return time;
 }
 
@@ -853,15 +859,15 @@ function App() {
                       <div className="schedule-card-head">
                         <span className={'schedule-vehicle-icon type-' + group.routeType}>{transportIcon(group.routeType)}</span>
                         <span className="schedule-route-number">{group.route}</span>
-                        <span className="schedule-route-copy"><strong>{group.headsign || group.routeName || 'Направление не указано'}</strong><small>{transportType(group.routeType)}{group.routeName ? ' · ' + group.routeName : ''}</small></span>
+                        <span className="schedule-route-copy"><strong>{group.headsign || group.routeName || 'Направление не указано'}</strong><small>{transportType(group.routeType, language)}{group.routeName ? ' · ' + group.routeName : ''}</small></span>
                         <span className="schedule-next">
                           <strong>{first ? first.toLocaleTimeString(localeCode, {hour:'2-digit', minute:'2-digit'}) : '—'}</strong>
-                          <small>{first ? departureDayLabel(first, scheduleClock) + ' · ' : ''}{minutes < 1 ? 'сейчас' : minutes < 60 ? 'через ' + minutes + ' мин' : 'через ' + Math.floor(minutes / 60) + ' ч ' + (minutes % 60) + ' мин'}</small>
+                          <small>{first ? departureDayLabel(first, scheduleClock, language) + ' · ' : ''}{minutes < 1 ? 'сейчас' : minutes < 60 ? 'через ' + minutes + ' мин' : 'через ' + Math.floor(minutes / 60) + ' ч ' + (minutes % 60) + ' мин'}</small>
                         </span>
                       </div>
                       <div className="schedule-times">
                         {shown.map((departure, index) => <span className={index === 0 ? 'schedule-time next' : 'schedule-time'} key={departure.toISOString()}>
-                          <strong>{formatDeparture(departure, scheduleClock)}</strong>
+                          <strong>{formatDeparture(departure, scheduleClock, localeCode, language)}</strong>
                           {index === 0 && <small>{minutes < 1 ? 'сейчас' : '+' + minutes + ' мин'}</small>}
                         </span>)}
                       </div>
@@ -902,7 +908,7 @@ function App() {
                       <div className="route-detail-title">
                         <span className={'schedule-vehicle-icon type-' + selectedRouteDetail.routeType}>{transportIcon(selectedRouteDetail.routeType)}</span>
                         <span className="schedule-route-number">{selectedRouteDetail.route}</span>
-                        <span><strong>{selectedRouteDetail.headsign || selectedRouteDetail.routeName}</strong><small>{transportType(selectedRouteDetail.routeType)} · {selectedRouteDetail.headsign || 'Направление'}</small></span>
+                        <span><strong>{selectedRouteDetail.headsign || selectedRouteDetail.routeName}</strong><small>{transportType(selectedRouteDetail.routeType, language)} · {selectedRouteDetail.headsign || 'Направление'}</small></span>
                       </div>
                       <div className="route-detail-caption">{t('routeStops')}</div>
                       {routePatternsStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем маршрут и остановки…</div>}
@@ -926,7 +932,7 @@ function App() {
                     <button className="full-route-heading route-open-button" onClick={() => setSelectedRouteDetail(group)} aria-label={'Открыть маршрут ' + group.route + ', ' + group.headsign}>
                       <span className={'schedule-vehicle-icon type-' + group.routeType}>{transportIcon(group.routeType)}</span>
                       <span className="schedule-route-number">{group.route}</span>
-                      <span className="full-route-copy"><strong>{group.headsign || group.routeName || 'Направление не указано'}</strong><small>{transportType(group.routeType)} · {group.departures.length} рейсов</small></span>
+                      <span className="full-route-copy"><strong>{group.headsign || group.routeName || 'Направление не указано'}</strong><small>{transportType(group.routeType, language)} · {group.departures.length} рейсов</small></span>
                       <span className="route-open-chevron">›</span>
                     </button>
                     <div className="full-departure-list">
