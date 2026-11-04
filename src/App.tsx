@@ -71,6 +71,11 @@ function transportType(type: string): string {
   return 'Автобус';
 }
 
+function departureDayLabel(date: Date, now: number): string {
+  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+  return date.toDateString() === tomorrow.toDateString() ? 'завтра' : 'сегодня';
+}
+
 function formatDeparture(date: Date, now: number): string {
   const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
   const tomorrow = new Date(now);
