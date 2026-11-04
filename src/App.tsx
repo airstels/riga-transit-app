@@ -7,6 +7,88 @@ import { officialStops, gtfsMetadata } from './data/gtfs-data';
 // Never show hand-entered demo coordinates: only official GTFS stops are allowed on the map.
 const activeStops: Stop[] = officialStops;
 
+
+type AppLanguage = 'ru' | 'lv' | 'en';
+const LANGUAGE_LABELS: Record<AppLanguage, { name: string; native: string }> = {
+  ru: { name: 'Русский', native: 'РУ' },
+  lv: { name: 'Latviešu', native: 'LV' },
+  en: { name: 'English', native: 'EN' },
+};
+const I18N: Record<string, Record<AppLanguage, string>> = {
+  profile: { ru: 'Профиль', lv: 'Profils', en: 'Profile' },
+  closeProfile: { ru: 'Закрыть профиль', lv: 'Aizvērt profilu', en: 'Close profile' },
+  personalSpace: { ru: 'RIGA TRANSIT · ЛИЧНОЕ ПРОСТРАНСТВО', lv: 'RIGA TRANSIT · PERSONĪGĀ TELPA', en: 'RIGA TRANSIT · PERSONAL SPACE' },
+  telegramUser: { ru: 'Имя получено из Telegram Mini App', lv: 'Vārds saņemts no Telegram Mini App', en: 'Name provided by Telegram Mini App' },
+  localProfile: { ru: 'Локальный профиль', lv: 'Lokālais profils', en: 'Local profile' },
+  guest: { ru: 'Гость Riga Transit', lv: 'Riga Transit viesis', en: 'Riga Transit guest' },
+  displayName: { ru: 'Отображаемое имя', lv: 'Attēlojamais vārds', en: 'Display name' },
+  namePlaceholder: { ru: 'Как к вам обращаться', lv: 'Kā jūs uzrunāt', en: 'What should we call you?' },
+  save: { ru: 'Сохранить', lv: 'Saglabāt', en: 'Save' },
+  nameLocal: { ru: 'Имя видно только в этом приложении на данном устройстве.', lv: 'Vārds ir redzams tikai šajā lietotnē un ierīcē.', en: 'Your name is visible only in this app on this device.' },
+  activity: { ru: 'ВАША АКТИВНОСТЬ', lv: 'JŪSU AKTIVITĀTE', en: 'YOUR ACTIVITY' },
+  favorites: { ru: 'Избранное', lv: 'Izlase', en: 'Favorites' },
+  recent: { ru: 'Недавние', lv: 'Nesenās', en: 'Recent' },
+  reports: { ru: 'Наблюдения', lv: 'Ziņojumi', en: 'Reports' },
+  myStops: { ru: 'Мои остановки', lv: 'Manas pieturas', en: 'My stops' },
+  myStopsHint: { ru: 'Избранное и недавние просмотры', lv: 'Izlase un nesen skatītās pieturas', en: 'Favorites and recently viewed stops' },
+  resetLocation: { ru: 'Сбросить геолокацию', lv: 'Atiestatīt atrašanās vietu', en: 'Reset location' },
+  resetLocationHint: { ru: 'Убрать мою позицию с карты', lv: 'Noņemt manu atrašanās vietu no kartes', en: 'Remove my position from the map' },
+  mapSettings: { ru: 'НАСТРОЙКИ КАРТЫ', lv: 'KARTES IESTATĪJUMI', en: 'MAP SETTINGS' },
+  showStops: { ru: 'Остановки на карте', lv: 'Pieturas kartē', en: 'Stops on map' },
+  showStopsHint: { ru: 'Показывать маркеры остановок', lv: 'Rādīt pieturu marķierus', en: 'Show stop markers' },
+  nearby: { ru: 'Ближайшие остановки', lv: 'Tuvākās pieturas', en: 'Nearby stops' },
+  nearbyHint: { ru: 'Показывать список рядом со мной', lv: 'Rādīt tuvumā esošo pieturu sarakstu', en: 'Show nearby stops list' },
+  mutedMap: { ru: 'Приглушённая карта', lv: 'Blāvāka karte', en: 'Dimmed map' },
+  mutedMapHint: { ru: 'Менее яркая подложка карты', lv: 'Mazāk spilgts kartes fons', en: 'Use a less bright map background' },
+  language: { ru: 'ЯЗЫК ПРИЛОЖЕНИЯ', lv: 'LIETOTNES VALODA', en: 'APP LANGUAGE' },
+  languageHint: { ru: 'Выберите язык интерфейса', lv: 'Izvēlieties saskarnes valodu', en: 'Choose your interface language' },
+  localData: { ru: 'Данные профиля, избранное и история хранятся на этом устройстве. Серверная синхронизация пока не подключена.', lv: 'Profila dati, izlase un vēsture tiek glabāti šajā ierīcē. Sinhronizācija ar serveri vēl nav pievienota.', en: 'Profile data, favorites and history are stored on this device. Server sync is not connected yet.' },
+  clearRecent: { ru: 'Очистить историю', lv: 'Notīrīt vēsturi', en: 'Clear history' },
+  clearRecentHint: { ru: 'Удалить список недавно просмотренных остановок', lv: 'Dzēst nesen skatīto pieturu sarakstu', en: 'Clear recently viewed stops' },
+  map: { ru: 'Карта', lv: 'Karte', en: 'Map' },
+  searchPlaceholder: { ru: 'Остановка или маршрут', lv: 'Pietura vai maršruts', en: 'Stop or route' },
+  searchStop: { ru: 'Поиск остановки', lv: 'Meklēt pieturu', en: 'Search stops' },
+  clearSearch: { ru: 'Очистить поиск', lv: 'Notīrīt meklēšanu', en: 'Clear search' },
+  nothingFound: { ru: 'Ничего не найдено по запросу', lv: 'Nekas nav atrasts pēc vaicājuma', en: 'No results found for' },
+  recentLabel: { ru: 'НЕДАВНИЕ', lv: 'NESENĀS', en: 'RECENT' },
+  latest: { ru: 'ПОСЛЕДНИЕ', lv: 'PĒDĒJĀS', en: 'LATEST' },
+  nearbyLabel: { ru: 'РЯДОМ С ВАМИ', lv: 'JUMS TUVU', en: 'NEAR YOU' },
+  stop: { ru: 'ОСТАНОВКА', lv: 'PIETURA', en: 'STOP' },
+  officialData: { ru: 'ОФИЦИАЛЬНЫЕ ДАННЫЕ', lv: 'OFICIĀLIE DATI', en: 'OFFICIAL DATA' },
+  demoCatalog: { ru: 'ДЕМО-КАТАЛОГ', lv: 'DEMO KATALOGS', en: 'DEMO CATALOG' },
+  departures: { ru: 'ОТПРАВЛЕНИЯ', lv: 'IZBRAUKŠANA', en: 'DEPARTURES' },
+  officialSchedule: { ru: 'ОФИЦИАЛЬНОЕ РАСПИСАНИЕ', lv: 'OFICIĀLAIS SARAKSTS', en: 'OFFICIAL TIMETABLE' },
+  nearestDepartures: { ru: 'Ближайшие рейсы с этой остановки', lv: 'Tuvākie reisi no šīs pieturas', en: 'Upcoming departures from this stop' },
+  all: { ru: 'Все', lv: 'Visi', en: 'All' },
+  buses: { ru: 'Автобусы', lv: 'Autobusi', en: 'Buses' },
+  trolleybuses: { ru: 'Троллейбусы', lv: 'Trolejbusi', en: 'Trolleybuses' },
+  trams: { ru: 'Трамваи', lv: 'Tramvaji', en: 'Trams' },
+  fullDay: { ru: 'Расписание на весь день', lv: 'Visas dienas saraksts', en: 'Full-day timetable' },
+  allTrips: { ru: 'Все рейсы и направления', lv: 'Visi reisi un virzieni', en: 'All trips and directions' },
+  open: { ru: 'Открыть', lv: 'Atvērt', en: 'Open' },
+  today: { ru: 'Сегодня', lv: 'Šodien', en: 'Today' },
+  tomorrow: { ru: 'Завтра', lv: 'Rīt', en: 'Tomorrow' },
+  fullSchedule: { ru: 'Полное расписание', lv: 'Pilns kustības saraksts', en: 'Full timetable' },
+  allDepartures: { ru: 'все отправления', lv: 'visi reisi', en: 'all departures' },
+  routeSearch: { ru: 'Номер маршрута или направление', lv: 'Maršruta numurs vai virziens', en: 'Route number or direction' },
+  route: { ru: 'Маршрут', lv: 'Maršruts', en: 'Route' },
+  allRoutes: { ru: '← Ко всем маршрутам', lv: '← Pie visiem maršrutiem', en: '← All routes' },
+  routeStops: { ru: 'ОСТАНОВКИ ПО ХОДУ МАРШРУТА', lv: 'MARŠRUTA PIETURAS', en: 'STOPS ALONG THE ROUTE' },
+  youAreHere: { ru: 'Вы здесь', lv: 'Jūs esat šeit', en: 'You are here' },
+  plannedTimes: { ru: 'Плановые времена GTFS. Реальные задержки и GPS транспорта не учитываются.', lv: 'Plānotie GTFS laiki. Reālie kavējumi un transporta GPS dati netiek ņemti vērā.', en: 'Scheduled GTFS times. Live delays and vehicle GPS are not included.' },
+  mapTab: { ru: 'Карта', lv: 'Karte', en: 'Map' },
+  favoritesTab: { ru: 'Избранное', lv: 'Izlase', en: 'Favorites' },
+  whereAmI: { ru: 'Где я', lv: 'Kur es esmu', en: 'Locate me' },
+  locating: { ru: 'Определяем…', lv: 'Nosaka atrašanās vietu…', en: 'Locating…' },
+  loadingSchedule: { ru: 'Загружаем расписание остановки…', lv: 'Ielādē pieturas sarakstu…', en: 'Loading stop timetable…' },
+  scheduleError: { ru: 'Не удалось загрузить расписание. Проверьте соединение и откройте остановку ещё раз.', lv: 'Neizdevās ielādēt sarakstu. Pārbaudiet savienojumu un atveriet pieturu vēlreiz.', en: 'Could not load the timetable. Check your connection and reopen the stop.' },
+  noDepartures: { ru: 'Для этой остановки нет опубликованных отправлений.', lv: 'Šai pieturai nav publicētu reisu.', en: 'No published departures for this stop.' },
+  calendarLoading: { ru: 'Проверяем дни и календарь движения…', lv: 'Pārbauda kustības kalendāru…', en: 'Checking service calendar…' },
+  noTodayTrips: { ru: 'На выбранную дату отправлений не найдено.', lv: 'Izvēlētajā datumā reisi nav atrasti.', en: 'No departures found for the selected date.' },
+  favoritesEmpty: { ru: 'Пока нет избранных остановок. Открой карточку остановки и нажми ☆.', lv: 'Izlasē vēl nav pieturu. Atver pieturas kartīti un nospied ☆.', en: 'No favorite stops yet. Open a stop card and tap ☆.' },
+  stopSingular: { ru: 'Остановка общественного транспорта', lv: 'Sabiedriskā transporta pietura', en: 'Public transport stop' },
+};
+
 type ReportType = 'check' | 'crowded' | 'delay' | 'empty' | 'other';
 interface Report {
   id: string;
@@ -303,6 +385,9 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [profileNameDraft, setProfileNameDraft] = useState('');
+  const [language, setLanguage] = useState<AppLanguage>(() => { try { const saved = localStorage.getItem('riga-language'); return saved === 'lv' || saved === 'en' ? saved : 'ru'; } catch { return 'ru'; } });
+  const t = (key: string) => I18N[key]?.[language] ?? I18N[key]?.ru ?? key;
+  const localeCode = language === 'ru' ? 'ru-RU' : language === 'lv' ? 'lv-LV' : 'en-GB';
   const [calendarData, setCalendarData] = useState<{ calendar: CalendarService[]; exceptions: CalendarException[] }>({ calendar: [], exceptions: [] });
   const [calendarStatus, setCalendarStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [scheduleEntries, setScheduleEntries] = useState<TimetableEntry[]>([]);
