@@ -220,7 +220,7 @@ def write_outputs(stops, metadata, tables):
 
     index, shards = build_timetable_data(tables)
     route_patterns = build_route_patterns(tables)
-    (PUBLIC_DATA / "route-patterns.json").write_text(json.dumps(route_patterns, ensure_ascii=False, separators=(",", ":")) + "\\n", encoding="utf-8")
+    (PUBLIC_DATA / "route-patterns.json").write_text(json.dumps(route_patterns, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     timetable_dir = PUBLIC_DATA / "timetables"
     if timetable_dir.exists():
         shutil.rmtree(timetable_dir)
