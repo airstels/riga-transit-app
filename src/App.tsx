@@ -312,6 +312,7 @@ function App() {
   const [expandedScheduleRoutes, setExpandedScheduleRoutes] = useState<string[]>([]);
   const [scheduleViewOpen, setScheduleViewOpen] = useState(false);
   const [scheduleDateOffset, setScheduleDateOffset] = useState(0);
+  const [scheduleSearch, setScheduleSearch] = useState('');
   const [routePatterns, setRoutePatterns] = useState<RoutePattern[] | null>(null);
   const [routePatternsStatus, setRoutePatternsStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [selectedRouteDetail, setSelectedRouteDetail] = useState<DepartureGroup | null>(null);
@@ -453,10 +454,16 @@ function App() {
   const fullDayDepartures = useMemo(() => buildDeparturesForDate(
     scheduleEntries, calendarData.calendar, calendarData.exceptions, selectedScheduleDate,
   ), [scheduleEntries, calendarData, selectedScheduleDate]);
-  const visibleFullDayDepartures = useMemo(() => scheduleTransportFilter === 'all'
-    ? fullDayDepartures
-    : fullDayDepartures.filter(group => group.routeType === scheduleTransportFilter),
-  [fullDayDepartures, scheduleTransportFilter]);
+  const visibleFullDayDepartures = useMemo(() => {
+    const query = scheduleSearch.trim().toLocaleLowerCase('ru-RU');
+    return fullDayDepartures.filter(group => {
+      const matchesType = scheduleTransportFilter === 'all' || group.routeType === scheduleTransportFilter;
+      const matchesSearch = !query || group.route.toLocaleLowerCase('ru-RU').includes(query)
+        || group.headsign.toLocaleLowerCase('ru-RU').includes(query)
+        || group.routeName.toLocaleLowerCase('ru-RU').includes(query);
+      return matchesType && matchesSearch;
+    });
+  }, [fullDayDepartures, scheduleTransportFilter, scheduleSearch]);
 
 
   const selectedReports = useMemo(() => selectedStop
@@ -729,7 +736,7 @@ function App() {
                 </div>
                 {!scheduleViewOpen && <div className="schedule-open-row">
                   <div><strong>Расписание на весь день</strong><small>Все рейсы и направления</small></div>
-                  <button onClick={() => { setScheduleDateOffset(0); setScheduleViewOpen(true); }}>Открыть <span>↗</span></button>
+                  <button onClick={() => { setScheduleDateOffset(0); setScheduleSearch(''); setSelectedRouteDetail(null); setScheduleViewOpen(true); }}>Открыть <span>↗</span></button>
                 </div>}
                 {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем расписание остановки…</div>}
                 {scheduleStatus === 'error' && <div className="schedule-state">Не удалось загрузить расписание. Проверьте соединение и откройте остановку ещё раз.</div>}
@@ -753,16 +760,18 @@ function App() {
                           <small>{first ? departureDayLabel(first, scheduleClock) + ' · ' : ''}{minutes < 1 ? 'сейчас' : minutes < 60 ? 'через ' + minutes + ' мин' : 'через ' + Math.floor(minutes / 60) + ' ч ' + (minutes % 60) + ' мин'}</small>
                         </span>
                       </div>
-                      <div className="schedule-departures-label"><span>СЛЕДУЮЩИЕ ОТПРАВЛЕНИЯ</span><span>{group.departures.length} рейсов</span></div>
                       <div className="schedule-times">
                         {shown.map((departure, index) => <span className={index === 0 ? 'schedule-time next' : 'schedule-time'} key={departure.toISOString()}>
                           <strong>{formatDeparture(departure, scheduleClock)}</strong>
                           {index === 0 && <small>{minutes < 1 ? 'сейчас' : '+' + minutes + ' мин'}</small>}
                         </span>)}
                       </div>
-                      {group.departures.length > 3 && <button className="schedule-expand" onClick={() => setExpandedScheduleRoutes(current => expanded ? current.filter(key => key !== group.key) : [...current, group.key])}>
-                        {expanded ? 'Свернуть расписание' : 'Показать ещё ' + (group.departures.length - 3) + ' отправлений'} <span>{expanded ? '⌃' : '⌄'}</span>
-                      </button>}
+                      <div className="schedule-card-actions">
+                        {group.departures.length > 3 && <button className="schedule-expand" onClick={() => setExpandedScheduleRoutes(current => expanded ? current.filter(key => key !== group.key) : [...current, group.key])}>
+                          {expanded ? 'Свернуть' : 'Ещё ' + (group.departures.length - 3) + ' рейсов'} <span>{expanded ? '⌃' : '⌄'}</span>
+                        </button>}
+                        <button className="schedule-route-detail-link" onClick={() => { setScheduleDateOffset(0); setSelectedRouteDetail(group); setScheduleViewOpen(true); }}>Маршрут <span>↗</span></button>
+                      </div>
                     </article>
                   );
                 })}
@@ -770,12 +779,18 @@ function App() {
                 {scheduleViewOpen && <div className="full-schedule-view">
                   <div className="full-schedule-toolbar">
                     <div><strong>Полное расписание</strong><small>{selectedStop.name} · все отправления</small></div>
-                    <button onClick={() => { setScheduleViewOpen(false); setSelectedRouteDetail(null); }} aria-label="Закрыть полное расписание">×</button>
+                    <button onClick={() => { setScheduleViewOpen(false); setSelectedRouteDetail(null); setScheduleSearch(''); }} aria-label="Закрыть полное расписание">×</button>
                   </div>
                   {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем полное расписание…</div>}
                   {scheduleStatus === 'error' && <div className="schedule-state">Не удалось загрузить расписание. Проверьте соединение и попробуйте снова.</div>}
                   {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-state">Загружаем календарь движения…</div>}
                   {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">Календарь движения временно недоступен.</div>}
+                  <label className="schedule-search">
+                    <span>⌕</span>
+                    <input value={scheduleSearch} onChange={event => setScheduleSearch(event.target.value)} placeholder="Номер маршрута или направление" aria-label="Поиск по расписанию" />
+                    {scheduleSearch && <button onClick={() => setScheduleSearch('')} aria-label="Очистить поиск">×</button>}
+                  </label>
+                  <div className="schedule-results-count">{visibleFullDayDepartures.length} {visibleFullDayDepartures.length === 1 ? 'направление' : 'направлений'} · {visibleFullDayDepartures.reduce((sum, group) => sum + group.departures.length, 0)} отправлений</div>
                   <div className="schedule-date-tabs" role="group" aria-label="Дата расписания">
                     <button className={scheduleDateOffset === 0 ? 'active' : ''} onClick={() => setScheduleDateOffset(0)}>Сегодня</button>
                     <button className={scheduleDateOffset === 1 ? 'active' : ''} onClick={() => setScheduleDateOffset(1)}>Завтра</button>
