@@ -107,11 +107,11 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   routes: { ru: 'Маршруты', lv: 'Maršruti', en: 'Routes' },
   favoriteStops: { ru: 'ИЗБРАННОЕ', lv: 'IZLASE', en: 'FAVORITES' },
   stopShort: { ru: 'Остановка', lv: 'Pietura', en: 'Stop' },
-  directionUnknown: { ru: t('directionUnknown'), lv: 'Virziens nav norādīts', en: 'Direction not specified' },
-  now: { ru: t('now'), lv: 'tagad', en: 'now' },
+  directionUnknown: { ru: 'Направление не указано', lv: 'Virziens nav norādīts', en: 'Direction not specified' },
+  now: { ru: 'сейчас', lv: 'tagad', en: 'now' },
   minutesShort: { ru: 'мин', lv: 'min', en: 'min' },
   hoursShort: { ru: 'ч', lv: 'h', en: 'h' },
-  collapse: { ru: t('collapse'), lv: 'Sakļaut', en: 'Collapse' },
+  collapse: { ru: 'Свернуть', lv: 'Sakļaut', en: 'Collapse' },
   moreTrips: { ru: 'Ещё', lv: 'Vēl', en: 'More' },
   routeSearchLabel: { ru: 'Поиск по расписанию', lv: 'Meklēt kustības sarakstā', en: 'Search timetable' },
   dateLabel: { ru: 'Дата расписания', lv: 'Saraksta datums', en: 'Timetable date' },
@@ -125,7 +125,7 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   commentPlaceholder: { ru: 'Комментарий до 160 символов (необязательно)', lv: 'Komentārs līdz 160 rakstzīmēm (neobligāti)', en: 'Comment up to 160 characters (optional)' },
   cancel: { ru: 'Отмена', lv: 'Atcelt', en: 'Cancel' },
   publish: { ru: 'Опубликовать', lv: 'Publicēt', en: 'Publish' },
-  anonymous: { ru: t('anonymous'), lv: 'Anonīms', en: 'Anonymous' },
+  anonymous: { ru: 'Аноним', lv: 'Anonīms', en: 'Anonymous' },
   check: { ru: 'Проверка', lv: 'Pārbaude', en: 'Check' },
   crowded: { ru: 'Переполнен', lv: 'Pārpildīts', en: 'Crowded' },
   delay: { ru: 'Задержка', lv: 'Kavēšanās', en: 'Delay' },
@@ -749,7 +749,7 @@ function App() {
               <div className="brand-title"><span className="brand-mark">R</span> Riga Transit</div>
               <div className="brand-subtitle">{language === 'ru' ? 'ГОРОДСКОЙ ТРАНСПОРТ · RĪGA' : language === 'lv' ? 'PILSĒTAS TRANSPORTS · RĪGA' : 'CITY TRANSPORT · RĪGA'}</div>
             </div>
-            <button className="user-chip profile-trigger" onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }} aria-label={t('profile')}>{user?.photo_url ? <img className="profile-trigger-photo" src={user.photo_url} alt="" /> : <span className="profile-trigger-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase(localeCode)}</span>}<span>{t('profile')}</span><span className="profile-trigger-chevron">↗</span></button>
+            <button className="user-chip profile-trigger" onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }} aria-label={t('profile')}>{user?.photo_url ? <img className="profile-trigger-photo" src={user.photo_url} alt="" /> : <span className="profile-trigger-avatar">{(profileName || user?.first_name || "R").slice(0,1).toLocaleUpperCase(localeCode)}</span>}<span>{t('profile')}</span><span className="profile-trigger-chevron">↗</span></button>
           </div>
           <div className="search-wrap">
             <span className="search-icon" aria-hidden="true">⌕</span>
