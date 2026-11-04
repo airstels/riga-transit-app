@@ -501,6 +501,8 @@ function App() {
   };
 
   const selectStop = (stop: Stop) => {
+    setSelectedRouteDetail(null);
+    setScheduleViewOpen(false);
     const nextRecent = [stop.id, ...recentIds.filter(id => id !== stop.id)].slice(0, 6);
     setRecentIds(nextRecent);
     try { localStorage.setItem(RECENT_KEY, JSON.stringify(nextRecent)); }
@@ -829,7 +831,7 @@ function App() {
                 <div className="schedule-footnote"><span>ⓘ</span> Время плановое. Фактические задержки и движение транспорта здесь не отображаются.</div>
               </div>
             </div>
-            <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? "Убрать из избранного" : "Добавить в избранное"} title={favoriteIds.includes(selectedStop.id) ? "В избранном" : "В избранное"}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setShowAddForm(false); }} aria-label="Закрыть">×</button></div>
+            <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? "Убрать из избранного" : "Добавить в избранное"} title={favoriteIds.includes(selectedStop.id) ? "В избранном" : "В избранное"}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setSelectedRouteDetail(null); setScheduleViewOpen(false); setShowAddForm(false); }} aria-label="Закрыть">×</button></div>
           </div>
 
           <div className="reports-heading"><span>Сообщения сообщества</span><span className="local-label">локально · актуально 2 часа</span></div>
