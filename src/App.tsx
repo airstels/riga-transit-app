@@ -224,6 +224,17 @@ function buildDeparturesForDate(entries: TimetableEntry[], calendar: CalendarSer
   })).sort((a, b) => (a.departures[0]?.getTime() ?? 0) - (b.departures[0]?.getTime() ?? 0));
 }
 
+function reportTypeLabel(type: ReportType, language: AppLanguage): string {
+  const labels: Record<ReportType, Record<AppLanguage, string>> = {
+    check: { ru: 'Проверка', lv: 'Pārbaude', en: 'Check' },
+    crowded: { ru: 'Переполнен', lv: 'Pārpildīts', en: 'Crowded' },
+    delay: { ru: 'Задержка', lv: 'Kavēšanās', en: 'Delay' },
+    empty: { ru: 'Свободно', lv: 'Brīvs', en: 'Not crowded' },
+    other: { ru: 'Другое', lv: 'Cits', en: 'Other' },
+  };
+  return labels[type][language];
+}
+
 function transportType(type: string, language: AppLanguage = 'ru'): string {
   const labels: Record<string, Record<AppLanguage, string>> = {
     '0': { ru: 'Трамвай', lv: 'Tramvajs', en: 'Tram' },
@@ -701,7 +712,7 @@ function App() {
       stopId: selectedStop.id,
       type: reportType,
       text: reportText.trim().slice(0, 160),
-      time: new Date(now).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+      time: new Date(now).toLocaleString(localeCode, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
       createdAt: now,
       user: user?.first_name ? [user.first_name, user.last_name].filter(Boolean).join(' ') : t('anonymous'),
     };
@@ -943,7 +954,7 @@ function App() {
                     <input value={scheduleSearch} onChange={event => setScheduleSearch(event.target.value)} placeholder={t('routeSearch')} aria-label={t('routeSearchLabel')} />
                     {scheduleSearch && <button onClick={() => setScheduleSearch('')} aria-label={t('clearSearch')}>×</button>}
                   </label>
-                  <div className="schedule-results-count">{visibleFullDayDepartures.length} {visibleFullDayDepartures.length === 1 ? 'направление' : 'направлений'} · {visibleFullDayDepartures.reduce((sum, group) => sum + group.departures.length, 0)} отправлений</div>
+                  <div className="schedule-results-count">{visibleFullDayDepartures.length} {visibleFullDayDepartures.length === 1 ? t('routeDirection') : t('directionCount')} · {visibleFullDayDepartures.reduce((sum, group) => sum + group.departures.length, 0)} {t('departureCount')}</div>
                   <div className="schedule-date-tabs" role="group" aria-label={t('dateLabel')}>
                     <button className={scheduleDateOffset === 0 ? 'active' : ''} onClick={() => setScheduleDateOffset(0)}>{t('today')}</button>
                     <button className={scheduleDateOffset === 1 ? 'active' : ''} onClick={() => setScheduleDateOffset(1)}>{t('tomorrow')}</button>
@@ -980,7 +991,7 @@ function App() {
                     <button className="full-route-heading route-open-button" onClick={() => setSelectedRouteDetail(group)} aria-label={t('routeOpen') + ' ' + group.route + ', ' + group.headsign}>
                       <span className={'schedule-vehicle-icon type-' + group.routeType}>{transportIcon(group.routeType)}</span>
                       <span className="schedule-route-number">{group.route}</span>
-                      <span className="full-route-copy"><strong>{group.headsign || group.routeName || t('directionUnknown')}</strong><small>{transportType(group.routeType, language)} · {group.departures.length} рейсов</small></span>
+                      <span className="full-route-copy"><strong>{group.headsign || group.routeName || t('directionUnknown')}</strong><small>{transportType(group.routeType, language)} · {group.departures.length} {language === 'ru' ? 'рейсов' : language === 'lv' ? 'reisi' : 'trips'}</small></span>
                       <span className="route-open-chevron">›</span>
                     </button>
                     <div className="full-departure-list">
@@ -999,7 +1010,7 @@ function App() {
                 <div className="schedule-footnote"><span>ⓘ</span> {t('plannedTimes')}</div>
               </div>
             </div>
-            <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? t('removeFavorite') : t('addFavorite')} title={favoriteIds.includes(selectedStop.id) ? "В избранном" : "В избранное"}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setSelectedRouteDetail(null); setScheduleViewOpen(false); setShowAddForm(false); }} aria-label={t('close')}>×</button></div>
+            <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? t('removeFavorite') : t('addFavorite')} title={favoriteIds.includes(selectedStop.id) ? t('removeFavorite') : t('addFavorite')}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setSelectedRouteDetail(null); setScheduleViewOpen(false); setShowAddForm(false); }} aria-label={t('close')}>×</button></div>
           </div>
 
           <div className="reports-heading"><span>{t('reportsTitle')}</span><span className="local-label">{t('localTwoHours')}</span></div>
@@ -1009,7 +1020,7 @@ function App() {
             ) : selectedReports.map(report => {
               const type = REPORT_TYPES.find(item => item.id === report.type);
               return <article className="report-card" key={report.id}>
-                <div className="report-meta"><span className={`report-tag ${type?.color ?? ''}`}>{type?.label ?? 'Сообщение'}</span><time>{report.time}</time></div>
+                <div className="report-meta"><span className={`report-tag ${type?.color ?? ''}`}>{type ? reportTypeLabel(type.id, language) : t('other')}</span><time>{report.time}</time></div>
                 {report.text && <p>{report.text}</p>}
                 <small>{report.user ?? t('anonymous')}</small>
               </article>;
