@@ -86,3 +86,6 @@ button:disabled { opacity: .65; cursor: wait; }
 .map-credit { position: absolute; z-index: 300; bottom: 3px; right: 5px; padding: 2px 5px; border-radius: 4px; color: #aab4be; background: rgba(10,14,18,.7); font-size: 8px; pointer-events: none; }
 @media (max-height: 650px) { .stop-sheet { max-height: 76dvh; } .reports-list { max-height: 105px; } }
 @media (min-width: 700px) { .top-overlay { left: 22px; right: auto; width: 390px; } .map-actions { top: 24px; right: 24px; } .stop-sheet { left: auto; right: 22px; bottom: 22px; width: 390px; max-height: 75dvh; } .nearest-panel { left: 22px; bottom: 22px; } }
+
+.stop-cluster-icon { border: 0; background: transparent; }
+.stop-cluster-icon span { display: flex; width: 36px; height: 36px; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,.94); border-radius: 50%; color: #fff; background: #167eaf; box-shadow: 0 0 0 5px rgba(42,171,238,.2), 0 4px 14px #0008; font-size: 11px; font-weight: 800; }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Circle, CircleMarker, MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
+import { Circle, CircleMarker, MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { stops, type Stop } from './data/stops';
 import { officialStops, gtfsMetadata } from './data/gtfs-data';
@@ -107,6 +107,55 @@ function MapResize() {
   }, [map]);
 
   return null;
+}
+
+
+const clusterIcon = (count: number) => L.divIcon({
+  className: 'stop-cluster-icon',
+  html: `<span>${count}</span>`,
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
+});
+
+function StopLayer({ stops: mapStops, onSelect }: { stops: Stop[]; onSelect: (stop: Stop) => void }) {
+  const map = useMap();
+  const [viewport, setViewport] = useState(0);
+
+  useMapEvents({
+    zoomend: () => setViewport(value => value + 1),
+    moveend: () => setViewport(value => value + 1),
+  });
+
+  const groups = useMemo(() => {
+    const zoom = map.getZoom();
+    const cellSize = zoom >= 16 ? 56 : zoom >= 14 ? 48 : 40;
+    const buckets = new Map<string, Stop[]>();
+    for (const stop of mapStops) {
+      const point = map.project([stop.lat, stop.lon], zoom);
+      const key = `${Math.floor(point.x / cellSize)}:${Math.floor(point.y / cellSize)}`;
+      const bucket = buckets.get(key);
+      if (bucket) bucket.push(stop);
+      else buckets.set(key, [stop]);
+    }
+    return Array.from(buckets.values()).map(items => ({
+      items,
+      lat: items.reduce((sum, item) => sum + item.lat, 0) / items.length,
+      lon: items.reduce((sum, item) => sum + item.lon, 0) / items.length,
+    }));
+  }, [map, mapStops, viewport]);
+
+  return (
+    <>
+      {groups.map(group => group.items.length === 1 ? (
+        <Marker key={group.items[0].id} position={[group.items[0].lat, group.items[0].lon]}
+          icon={stopIcon} eventHandlers={{ click: () => onSelect(group.items[0]) }} />
+      ) : (
+        <Marker key={group.items.map(item => item.id).join('|')} position={[group.lat, group.lon]}
+          icon={clusterIcon(group.items.length)}
+          eventHandlers={{ click: () => map.setView([group.lat, group.lon], Math.min(map.getZoom() + 2, 18), { animate: true }) }} />
+      ))}
+    </>
+  );
 }
 
 function App() {
@@ -238,10 +287,7 @@ function App() {
         />
         <MapResize />
         <MapFocus target={mapTarget} />
-        {activeStops.map(stop => (
-          <Marker key={stop.id} position={[stop.lat, stop.lon]} icon={stopIcon}
-            eventHandlers={{ click: () => selectStop(stop) }} />
-        ))}
+        <StopLayer stops={activeStops} onSelect={selectStop} />
         {position && <>
           <Circle center={[position.lat, position.lon]} radius={position.accuracy ?? 30}
             pathOptions={{ color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.09, weight: 1 }} />
