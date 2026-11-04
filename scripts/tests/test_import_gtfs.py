@@ -91,6 +91,9 @@ class GtfsImportTests(unittest.TestCase):
                 metadata = {"stopCount": 1, "routeCount": 1, "tripCount": 1, "stopTimeCount": 1}
                 import_gtfs.write_outputs([{"id": "s1", "name": "Center", "lat": 56.9, "lon": 24.1}], metadata, tables)
                 self.assertTrue((import_gtfs.PUBLIC_DATA / "timetable-index.json").exists())
+                route_patterns_path = import_gtfs.PUBLIC_DATA / "route-patterns.json"
+                self.assertTrue(route_patterns_path.exists())
+                self.assertEqual(len(__import__("json").loads(route_patterns_path.read_text(encoding="utf-8"))), 1)
                 self.assertTrue((import_gtfs.PUBLIC_DATA / "timetables" / f"{import_gtfs.timetable_shard('s1'):02d}.json").exists())
                 self.assertFalse((import_gtfs.PUBLIC_DATA / "stop_times.json").exists())
                 self.assertFalse((import_gtfs.PUBLIC_DATA / "trips.json").exists())
