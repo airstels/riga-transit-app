@@ -674,3 +674,6 @@ button:disabled { opacity: .65; cursor: wait; }
   filter: saturate(.58) contrast(1.04) brightness(.96);
   transition: filter .2s ease;
 }
+
+/* Keep OpenStreetMap attribution clear of the floating bottom navigation. */
+.leaflet-control-attribution { margin-bottom: 66px !important; }

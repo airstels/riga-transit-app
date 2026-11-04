@@ -590,16 +590,18 @@ function App() {
         </div>
       )}
 
-      <div className="map-actions">
-        <button className="map-action gps-button" onClick={locateMe} disabled={gpsState === 'loading'}>
-          <span>{gpsState === 'loading' ? '…' : '◎'}</span>
-          {gpsState === 'loading' ? 'Определяем…' : 'Где я'}
-        </button>
-      </div>
+      {activeTab === 'map' && (
+        <div className="map-actions">
+          <button className="map-action gps-button" onClick={locateMe} disabled={gpsState === 'loading'}>
+            <span>{gpsState === 'loading' ? '…' : '◎'}</span>
+            {gpsState === 'loading' ? 'Определяем…' : 'Где я'}
+          </button>
+        </div>
+      )}
 
-      {gpsError && <div className="gps-error" role="status">{gpsError}<button onClick={() => setGpsError('')}>×</button></div>}
+      {activeTab === 'map' && gpsError && <div className="gps-error" role="status">{gpsError}<button onClick={() => setGpsError('')}>×</button></div>}
 
-      {showNearbyPanel && position && nearestStops.length > 0 && !selectedStop && (
+      {activeTab === 'map' && showNearbyPanel && position && nearestStops.length > 0 && !selectedStop && (
         <aside className="nearest-panel glass">
           <div className="panel-eyebrow">РЯДОМ С ВАМИ</div>
           {nearestStops.slice(0, 3).map(({ stop, distance }, index) => (
