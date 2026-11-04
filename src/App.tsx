@@ -80,21 +80,21 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   favoritesTab: { ru: 'Избранное', lv: 'Izlase', en: 'Favorites' },
   whereAmI: { ru: 'Где я', lv: 'Kur es esmu', en: 'Locate me' },
   locating: { ru: 'Определяем…', lv: 'Nosaka atrašanās vietu…', en: 'Locating…' },
-  loadingSchedule: { ru: '{t('loadingSchedule')}', lv: 'Ielādē pieturas sarakstu…', en: 'Loading stop timetable…' },
-  scheduleError: { ru: '{t('scheduleError')}', lv: 'Neizdevās ielādēt sarakstu. Pārbaudiet savienojumu un atveriet pieturu vēlreiz.', en: 'Could not load the timetable. Check your connection and reopen the stop.' },
-  noDepartures: { ru: '{t('noDepartures')}', lv: 'Šai pieturai nav publicētu reisu.', en: 'No published departures for this stop.' },
-  calendarLoading: { ru: '{t('calendarLoading')}', lv: 'Pārbauda kustības kalendāru…', en: 'Checking service calendar…' },
-  noTodayTrips: { ru: '{t('noTodayTrips')}', lv: 'Izvēlētajā datumā reisi nav atrasti.', en: 'No departures found for the selected date.' },
+  loadingSchedule: { ru: 'Загружаем расписание остановки…', lv: 'Ielādē pieturas sarakstu…', en: 'Loading stop timetable…' },
+  scheduleError: { ru: 'Не удалось загрузить расписание. Проверьте соединение и откройте остановку ещё раз.', lv: 'Neizdevās ielādēt sarakstu. Pārbaudiet savienojumu un atveriet pieturu vēlreiz.', en: 'Could not load the timetable. Check your connection and reopen the stop.' },
+  noDepartures: { ru: 'Для этой остановки нет опубликованных отправлений.', lv: 'Šai pieturai nav publicētu reisu.', en: 'No published departures for this stop.' },
+  calendarLoading: { ru: 'Проверяем дни и календарь движения…', lv: 'Pārbauda kustības kalendāru…', en: 'Checking service calendar…' },
+  noTodayTrips: { ru: 'На выбранную дату отправлений не найдено.', lv: 'Izvēlētajā datumā reisi nav atrasti.', en: 'No departures found for the selected date.' },
   favoritesEmpty: { ru: 'Пока нет избранных остановок. Открой карточку остановки и нажми ☆.', lv: 'Izlasē vēl nav pieturu. Atver pieturas kartīti un nospied ☆.', en: 'No favorite stops yet. Open a stop card and tap ☆.' },
   stopSingular: { ru: 'Остановка общественного транспорта', lv: 'Sabiedriskā transporta pietura', en: 'Public transport stop' },
-  scheduleLoadingFull: { ru: '{t('scheduleLoadingFull')}', lv: 'Ielādē pilnu kustības sarakstu…', en: 'Loading full timetable…' },
-  scheduleRetry: { ru: '{t('scheduleRetry')}', lv: 'Neizdevās ielādēt sarakstu. Pārbaudiet savienojumu un mēģiniet vēlreiz.', en: 'Could not load the timetable. Check your connection and try again.' },
-  calendarError: { ru: '{t('calendarError')}', lv: 'Kustības kalendārs pašlaik nav pieejams.', en: 'Service calendar is temporarily unavailable.' },
-  noSelectedType: { ru: '{t('noSelectedType')}', lv: 'Tuvāko 24 stundu laikā nav izvēlētā transporta veida reisu.', en: 'No departures of this type in the next 24 hours.' },
-  noUpcoming: { ru: '{t('noUpcoming')}', lv: 'Tuvāko 24 stundu laikā plānotie reisi nav atrasti.', en: 'No scheduled departures found in the next 24 hours.' },
-  routePatternLoading: { ru: '{t('routePatternLoading')}', lv: 'Ielādē maršrutu un pieturas…', en: 'Loading route and stops…' },
-  routePatternError: { ru: '{t('routePatternError')}', lv: 'Neizdevās ielādēt maršruta shēmu. Mēģiniet vēlreiz.', en: 'Could not load route map. Please try again.' },
-  routePatternMissing: { ru: '{t('routePatternMissing')}', lv: 'Publicētajos datos šim virzienam pieturu shēma nav atrasta.', en: 'No stop sequence was found for this direction in the published data.' },
+  scheduleLoadingFull: { ru: 'Загружаем полное расписание…', lv: 'Ielādē pilnu kustības sarakstu…', en: 'Loading full timetable…' },
+  scheduleRetry: { ru: 'Не удалось загрузить расписание. Проверьте соединение и попробуйте снова.', lv: 'Neizdevās ielādēt sarakstu. Pārbaudiet savienojumu un mēģiniet vēlreiz.', en: 'Could not load the timetable. Check your connection and try again.' },
+  calendarError: { ru: 'Календарь движения временно недоступен.', lv: 'Kustības kalendārs pašlaik nav pieejams.', en: 'Service calendar is temporarily unavailable.' },
+  noSelectedType: { ru: 'Нет рейсов выбранного типа в ближайшие 24 часа.', lv: 'Tuvāko 24 stundu laikā nav izvēlētā transporta veida reisu.', en: 'No departures of this type in the next 24 hours.' },
+  noUpcoming: { ru: 'В ближайшие 24 часа плановых отправлений не найдено.', lv: 'Tuvāko 24 stundu laikā plānotie reisi nav atrasti.', en: 'No scheduled departures found in the next 24 hours.' },
+  routePatternLoading: { ru: 'Загружаем маршрут и остановки…', lv: 'Ielādē maršrutu un pieturas…', en: 'Loading route and stops…' },
+  routePatternError: { ru: 'Не удалось загрузить схему маршрута. Попробуйте открыть её ещё раз.', lv: 'Neizdevās ielādēt maršruta shēmu. Mēģiniet vēlreiz.', en: 'Could not load route map. Please try again.' },
+  routePatternMissing: { ru: 'Для этого направления схема остановок в опубликованных данных не найдена.', lv: 'Publicētajos datos šim virzienam pieturu shēma nav atrasta.', en: 'No stop sequence was found for this direction in the published data.' },
   routeDirection: { ru: 'Направление', lv: 'Virziens', en: 'Direction' },
   reportsTitle: { ru: 'Сообщения сообщества', lv: 'Kopienas ziņojumi', en: 'Community reports' },
   localTwoHours: { ru: 'локально · актуально 2 часа', lv: 'lokāli · derīgi 2 stundas', en: 'local · valid for 2 hours' },
@@ -922,7 +922,7 @@ function App() {
                 {scheduleStatus === 'empty' && <div className="schedule-state">{t('noDepartures')}</div>}
                 {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-state">{t('calendarLoading')}</div>}
                 {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">{t('calendarError')}</div>}
-                {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleDepartures.length === 0 && <div className="schedule-state">{upcomingDepartures.length ? '{t('noSelectedType')}' : '{t('noUpcoming')}'}</div>}
+                {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleDepartures.length === 0 && <div className="schedule-state">{upcomingDepartures.length ? t('noSelectedType') : t('noUpcoming')}</div>}
                 {visibleDepartures.map(group => {
                   const first = group.departures[0];
                   const expanded = expandedScheduleRoutes.includes(group.key);
