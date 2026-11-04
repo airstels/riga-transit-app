@@ -135,6 +135,12 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   allowGeo: { ru: 'Разреши доступ к геолокации в настройках браузера', lv: 'Atļauj piekļuvi atrašanās vietai pārlūka iestatījumos', en: 'Allow location access in your browser settings' },
   geoTimeout: { ru: 'Не удалось определить местоположение вовремя', lv: 'Neizdevās laikus noteikt atrašanās vietu', en: 'Location request timed out' },
   geoUnavailable: { ru: 'Местоположение временно недоступно', lv: 'Atrašanās vieta īslaicīgi nav pieejama', en: 'Location is temporarily unavailable' },
+  transportFilter: { ru: 'Фильтр транспорта', lv: 'Transporta filtrs', en: 'Transport filter' },
+  stopPrefix: { ru: 'Остановка', lv: 'Pietura', en: 'Stop' },
+  officialDataNote: { ru: 'Официальные данные Rīgas satiksme', lv: 'Rīgas satiksme oficiālie dati', en: 'Official Rīgas satiksme data' },
+  passed: { ru: 'Прошёл', lv: 'Pagājis', en: 'Departed' },
+  nextDeparture: { ru: 'Следующий рейс', lv: 'Nākamais reiss', en: 'Next departure' },
+  scheduled: { ru: 'По расписанию', lv: 'Pēc saraksta', en: 'Scheduled' },
 };
 
 type ReportType = 'check' | 'crowded' | 'delay' | 'empty' | 'other';
@@ -247,6 +253,15 @@ function transportType(type: string, language: AppLanguage = 'ru'): string {
 }
 
 function minutesUntil(date: Date, now: number): number { return Math.max(0, Math.ceil((date.getTime() - now) / 60000)); }
+
+function formatRelativeMinutes(minutes: number, language: AppLanguage): string {
+  if (minutes < 1) return language === 'ru' ? 'сейчас' : language === 'lv' ? 'tagad' : 'now';
+  if (language === 'en') return `in ${minutes} min`;
+  if (language === 'lv') return `pēc ${minutes} min`;
+  return `через ${minutes} мин`;
+}
+
+
 
 function transportIcon(type: string): string {
   if (type === '0') return '🚋';
@@ -874,7 +889,7 @@ function App() {
       )}
 
       {selectedStop && (
-        <section className={scheduleViewOpen ? "stop-sheet glass schedule-open" : "stop-sheet glass"} aria-label={`Остановка ${selectedStop.name}`}>
+        <section className={scheduleViewOpen ? "stop-sheet glass schedule-open" : "stop-sheet glass"} aria-label={t('stopPrefix') + ' ' + selectedStop.name}>
           <div className="sheet-handle" />
           <div className="sheet-heading">
             <div>
@@ -921,13 +936,13 @@ function App() {
                         <span className="schedule-route-copy"><strong>{group.headsign || group.routeName || t('directionUnknown')}</strong><small>{transportType(group.routeType, language)}{group.routeName ? ' · ' + group.routeName : ''}</small></span>
                         <span className="schedule-next">
                           <strong>{first ? first.toLocaleTimeString(localeCode, {hour:'2-digit', minute:'2-digit'}) : '—'}</strong>
-                          <small>{first ? departureDayLabel(first, scheduleClock, language) + ' · ' : ''}{minutes < 1 ? t('now') : minutes < 60 ? 'через ' + minutes + ' мин' : 'через ' + Math.floor(minutes / 60) + ' ч ' + (minutes % 60) + ' мин'}</small>
+                          <small>{first ? departureDayLabel(first, scheduleClock, language) + ' · ' : ''}{formatRelativeMinutes(minutes, language)}</small>
                         </span>
                       </div>
                       <div className="schedule-times">
                         {shown.map((departure, index) => <span className={index === 0 ? 'schedule-time next' : 'schedule-time'} key={departure.toISOString()}>
                           <strong>{formatDeparture(departure, scheduleClock, localeCode, language)}</strong>
-                          {index === 0 && <small>{minutes < 1 ? t('now') : '+' + minutes + ' мин'}</small>}
+                          {index === 0 && <small>{formatRelativeMinutes(minutes, language)}</small>}
                         </span>)}
                       </div>
                       <div className="schedule-card-actions">
@@ -981,7 +996,7 @@ function App() {
                             const isCurrent = item.stopId === selectedStop.id;
                             return <li className={isCurrent ? 'current' : ''} key={item.stopId + '-' + item.sequence}>
                               <span className="route-stop-marker">{index + 1}</span>
-                              <span className="route-stop-name">{stop?.name || 'Остановка ' + item.stopId}{isCurrent && <small>{t('youAreHere')}</small>}</span>
+                              <span className="route-stop-name">{stop?.name || t('stopPrefix') + ' ' + item.stopId}{isCurrent && <small>{t('youAreHere')}</small>}</span>
                             </li>;
                           })}
                         </ol>;
@@ -1000,7 +1015,7 @@ function App() {
                         const isNext = !passed && !group.departures.some(item => item.getTime() >= scheduleClock && item.getTime() < departure.getTime());
                         return <div className={passed ? 'full-departure passed' : isNext ? 'full-departure next' : 'full-departure'} key={departure.toISOString()}>
                           <strong>{departure.toLocaleTimeString(localeCode, { hour: '2-digit', minute: '2-digit' })}</strong>
-                          <small>{passed ? (language === 'ru' ? 'Прошёл' : language === 'lv' ? 'Pagājis' : 'Departed') : isNext ? (language === 'ru' ? 'Следующий рейс' : language === 'lv' ? 'Nākamais reiss' : 'Next departure') : (language === 'ru' ? 'По расписанию' : language === 'lv' ? 'Pēc saraksta' : 'Scheduled')}</small>
+                          <small>{passed ? t('passed') : isNext ? t('nextDeparture') : t('scheduled')}</small>
                         </div>;
                       })}
                     </div>
@@ -1048,7 +1063,7 @@ function App() {
               </div>
             </div>
           )}
-          <div className="data-note"><span className="data-check">✓</span> Официальные данные Rīgas satiksme · {gtfsMetadata.importedAt}</div>
+          <div className="data-note"><span className="data-check">✓</span> {t('officialDataNote')} · {gtfsMetadata.importedAt}</div>
         </section>
       )}
 
