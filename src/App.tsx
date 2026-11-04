@@ -823,7 +823,7 @@ function App() {
         <div className="profile-backdrop" onClick={() => setShowProfile(false)}>
           <section className="profile-panel glass" role="dialog" aria-modal="true" aria-labelledby="profile-title" onClick={event => event.stopPropagation()}>
             <div className="profile-panel-top">
-              <div><div className="panel-eyebrow">{t('personalSpace')}</div><span className="profile-kicker">YOUR CITY · YOUR ROUTES</span></div>
+              <div><div className="panel-eyebrow">{t('personalSpace')}</div><span className="profile-kicker">{language === 'ru' ? 'ВАШ ГОРОД · ВАШИ МАРШРУТЫ' : language === 'lv' ? 'JŪSU PILSĒTA · JŪSU MARŠRUTI' : 'YOUR CITY · YOUR ROUTES'}</span></div>
               <button className="close-sheet" onClick={() => setShowProfile(false)} aria-label={t('closeProfile')}>×</button>
             </div>
             <div className="profile-identity">
