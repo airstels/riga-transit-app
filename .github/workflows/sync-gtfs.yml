@@ -2,6 +2,12 @@ name: Sync official Rīgas satiksme GTFS
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/import_gtfs.py"
+      - "scripts/tests/test_import_gtfs.py"
+      - ".github/workflows/sync-gtfs.yml"
   schedule:
     - cron: "17 3 2 * *"
 
