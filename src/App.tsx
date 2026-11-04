@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Circle, CircleMarker, MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import { stops, type Stop } from './data/stops';
+import { type Stop } from './data/stops';
 import { officialStops, gtfsMetadata } from './data/gtfs-data';
 
 // Never show hand-entered demo coordinates: only official GTFS stops are allowed on the map.
