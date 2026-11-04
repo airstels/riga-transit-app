@@ -92,7 +92,11 @@ export default function App() {
 
   const saveReports = (newReports: Report[]) => {
     setReports(newReports);
-    localStorage.setItem('riga-reports', JSON.stringify(newReports));
+    try {
+      localStorage.setItem('riga-reports', JSON.stringify(newReports));
+    } catch (error) {
+      console.warn('Не удалось сохранить сообщения на этом устройстве:', error);
+    }
   };
 
   const addReport = () => {
@@ -159,7 +163,7 @@ export default function App() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-semibold text-lg">Riga Transit</h1>
-              <p className="text-xs text-telegram-secondary">Карта остановок + проверки</p>
+              <p className="text-xs text-telegram-secondary">Демо-карта · точки и маршруты пока не подтверждены</p>
             </div>
             <div className="text-right text-xs text-telegram-secondary">
               {tgUser ? `Привет, ${tgUser.first_name}` : 'Telegram'}
