@@ -192,6 +192,10 @@ button:disabled { opacity: .65; cursor: wait; }
 .gps-button { letter-spacing: .1px; }
 .nearest-button { color: #f0d9a8; }
 .zoom-control {
+  position: absolute;
+  z-index: 450;
+  right: 14px;
+  bottom: max(82px, calc(env(safe-area-inset-bottom) + 74px));
   display: flex;
   width: 42px;
   flex-direction: column;
@@ -302,6 +306,7 @@ button:disabled { opacity: .65; cursor: wait; }
   font-size: 10px;
 }
 @media (min-width: 700px) {
+  .zoom-control { right: 24px; bottom: 96px; }
   .top-overlay { width: 410px; }
   .header-card { padding: 17px; }
   .stop-sheet { width: 410px; }

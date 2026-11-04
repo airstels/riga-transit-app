@@ -305,6 +305,7 @@ function App() {
           maxZoom={20}
         />
         <MapResize />
+        <MapZoomControl />
         <MapFocus target={mapTarget} />
         <StopLayer stops={activeStops} selectedStop={selectedStop} onSelect={selectStop} />
         {position && <>
@@ -357,7 +358,6 @@ function App() {
       </section>
 
       <div className="map-actions">
-        <MapZoomControl />
         <button className="map-action gps-button" onClick={locateMe} disabled={gpsState === 'loading'}>
           <span>{gpsState === 'loading' ? '…' : '◎'}</span>
           {gpsState === 'loading' ? 'Определяем…' : 'Где я'}
