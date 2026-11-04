@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Import the latest Rīgas satiksme GTFS feed into the static frontend."""
 from __future__ import annotations
-import csv, io, json, re, sys, tempfile, urllib.request, zipfile
+import csv, hashlib, io, json, re, shutil, sys, tempfile, urllib.request, zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "src" / "data" / "gtfs-data.ts"
 PUBLIC_DATA = ROOT / "public" / "data" / "gtfs"
+TIMETABLE_SHARDS = 32
 DATASET_ID = "6d78358a-0095-4ce3-b119-6cde5d0ac54f"
 CKAN_API = "https://data.gov.lv/dati/api/3/action/package_show?id=" + DATASET_ID
 RESOURCE_RE = re.compile(r"marsrutusaraksti(\d{2})_(\d{4})\.zip$", re.I)
@@ -102,17 +103,87 @@ def import_feed(source):
     stops, metadata, _ = load_feed(source)
     return stops, metadata
 
+def timetable_shard(stop_id):
+    digest = hashlib.sha1(stop_id.encode("utf-8")).hexdigest()
+    return int(digest[:8], 16) % TIMETABLE_SHARDS
+
+
+def build_timetable_data(tables):
+    route_lookup = {}
+    for route in tables["routes"]:
+        route_id = route.get("route_id", "").strip()
+        if not route_id:
+            continue
+        route_lookup[route_id] = [
+            route.get("route_short_name", "").strip() or route_id,
+            route.get("route_long_name", "").strip(),
+            route.get("route_type", "").strip(),
+        ]
+
+    trip_lookup = {}
+    for trip in tables["trips"]:
+        trip_id = trip.get("trip_id", "").strip()
+        route = route_lookup.get(trip.get("route_id", "").strip())
+        if not trip_id or not route:
+            continue
+        trip_lookup[trip_id] = [
+            trip.get("service_id", "").strip(),
+            route[0], route[1], route[2],
+            trip.get("trip_headsign", "").strip(),
+            trip.get("direction_id", "").strip(),
+        ]
+
+    shards = {}
+    index = {}
+    for row in tables["stop_times"]:
+        stop_id = row.get("stop_id", "").strip()
+        trip = trip_lookup.get(row.get("trip_id", "").strip())
+        departure = row.get("departure_time", "").strip() or row.get("arrival_time", "").strip()
+        if not stop_id or not trip or not departure:
+            continue
+        shard = timetable_shard(stop_id)
+        index[stop_id] = shard
+        bucket = shards.setdefault(shard, {}).setdefault(stop_id, [])
+        # Compact tuple: time, route number, route name, GTFS type, service, destination, direction.
+        bucket.append([departure, *trip[1:]])
+
+    for stop_rows in shards.values():
+        for rows in stop_rows.values():
+            rows.sort(key=lambda item: item[0])
+    return index, shards
+
+
 def write_outputs(stops, metadata, tables):
     PUBLIC_DATA.mkdir(parents=True, exist_ok=True)
     (PUBLIC_DATA / "stops.json").write_text(json.dumps(stops, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    for name, rows in tables.items():
+    for name in ("routes", "calendar", "calendar_dates"):
+        rows = tables.get(name, [])
         (PUBLIC_DATA / f"{name}.json").write_text(json.dumps(rows, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+
+    index, shards = build_timetable_data(tables)
+    timetable_dir = PUBLIC_DATA / "timetables"
+    if timetable_dir.exists():
+        shutil.rmtree(timetable_dir)
+    timetable_dir.mkdir(parents=True, exist_ok=True)
+    for shard in range(TIMETABLE_SHARDS):
+        payload = shards.get(shard, {})
+        (timetable_dir / f"{shard:02d}.json").write_text(
+            json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    (PUBLIC_DATA / "timetable-index.json").write_text(
+        json.dumps(index, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+
+    # Remove the previous monolithic files: the client loads only one small stop shard.
+    for obsolete in ("stop_times.json", "trips.json"):
+        (PUBLIC_DATA / obsolete).unlink(missing_ok=True)
+
+    metadata["timetableShardCount"] = TIMETABLE_SHARDS
+    metadata["timetableStopCount"] = len(index)
     (PUBLIC_DATA / "manifest.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     payload = json.dumps(stops, ensure_ascii=False, separators=(",", ":"))
     meta = json.dumps(metadata, ensure_ascii=False, separators=(",", ":"))
     OUTPUT.write_text("import type { Stop } from './stops';\n\n" +
       f"export const officialStops: Stop[] = {payload};\nexport const gtfsMetadata = {meta};\n", encoding="utf-8")
-    print(f"Imported {metadata['stopCount']} stops, {metadata['routeCount']} routes, {metadata['tripCount']} trips and {metadata['stopTimeCount']} stop times.")
+    print(f"Imported {metadata['stopCount']} stops, {metadata['routeCount']} routes, {metadata['tripCount']} trips and {metadata['stopTimeCount']} stop times into {TIMETABLE_SHARDS} lazy timetable shards.")
 
 def main():
     if len(sys.argv) != 2:

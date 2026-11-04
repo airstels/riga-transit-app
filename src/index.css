@@ -509,3 +509,168 @@ button:disabled { opacity: .65; cursor: wait; }
 .profile-footnote { margin-top:13px; padding:10px 11px; border:1px solid rgba(255,255,255,.055); border-radius:11px; color:#84919a; background:rgba(0,0,0,.14); font-size:9px; line-height:1.5; }
 @keyframes profile-fade-in { from { opacity:0; } to { opacity:1; } }
 @media (max-width:380px) { .profile-panel { padding:15px; border-radius:21px; } .profile-identity { gap:11px; padding:12px; } .profile-avatar { width:48px; height:48px; flex-basis:48px; border-radius:15px; } .profile-identity-copy h2 { font-size:16px; } }
+
+
+/* Stop timetable — compact, route-oriented and scroll-safe on mobile */
+.sheet-heading > div:first-child { min-width: 0; flex: 1; }
+.schedule-panel {
+  max-height: min(27dvh, 210px);
+  margin-top: 12px;
+  padding: 10px 10px 7px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(218,183,120,.16);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(218,183,120,.065), rgba(0,0,0,.15));
+  scrollbar-width: thin;
+  scrollbar-color: rgba(218,183,120,.28) transparent;
+}
+.schedule-heading, .favorites-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: #d8bd8b;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.schedule-heading small, .favorites-panel-heading small {
+  color: #7f8c96;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: .6px;
+}
+.schedule-route {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 9px 1px;
+  border-top: 1px solid rgba(255,255,255,.065);
+}
+.schedule-route-main { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.schedule-route-number {
+  display: inline-flex;
+  min-width: 29px;
+  height: 27px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border: 1px solid rgba(218,183,120,.38);
+  border-radius: 8px;
+  color: #f1d7a4;
+  background: rgba(218,183,120,.12);
+  font-size: 11px;
+  font-weight: 800;
+}
+.schedule-route-copy { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.schedule-route-copy strong { overflow: hidden; color: #e8edf0; font-size: 10px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.schedule-route-copy small { overflow: hidden; color: #82909a; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.schedule-times { display: flex; flex-wrap: wrap; gap: 5px; padding-left: 38px; }
+.schedule-time {
+  padding: 4px 7px;
+  border: 1px solid rgba(255,255,255,.075);
+  border-radius: 7px;
+  color: #bdc7ce;
+  background: rgba(255,255,255,.035);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.schedule-time.next { border-color: rgba(218,183,120,.36); color: #f0d7a7; background: rgba(218,183,120,.11); font-weight: 750; }
+.schedule-message { padding: 13px 4px; color: #a0acb5; font-size: 10px; line-height: 1.45; }
+.schedule-footnote { padding: 7px 1px 1px; color: #73808a; font-size: 8px; line-height: 1.4; }
+
+/* Bottom navigation and dedicated favourites view */
+.bottom-nav {
+  position: absolute;
+  z-index: 460;
+  right: 12px;
+  bottom: max(7px, env(safe-area-inset-bottom));
+  left: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  min-height: 58px;
+  padding: 5px;
+  border: 1px solid rgba(218,183,120,.19);
+  border-radius: 18px;
+  background: rgba(14,19,25,.96);
+  box-shadow: 0 10px 32px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.05) inset;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.bottom-nav button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 12px;
+  color: #8b98a2;
+  background: transparent;
+}
+.bottom-nav button > span { font-size: 19px; line-height: 1.05; }
+.bottom-nav button small { font-size: 9px; font-weight: 600; }
+.bottom-nav button.active { color: #f0d8a7; background: linear-gradient(135deg, rgba(218,183,120,.17), rgba(218,183,120,.06)); }
+.favorites-panel {
+  position: absolute;
+  z-index: 430;
+  right: 12px;
+  bottom: max(76px, calc(env(safe-area-inset-bottom) + 68px));
+  left: 12px;
+  max-height: min(43dvh, 360px);
+  padding: 13px;
+  overflow-y: auto;
+  border-radius: 18px;
+}
+.favorites-panel-heading { padding: 1px 2px 8px; }
+.favorites-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 7px 5px;
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,.065);
+  color: #edf1f4;
+  background: transparent;
+  text-align: left;
+}
+.favorites-star { color: #e1c28b; font-size: 14px; }
+.favorites-name { min-width: 0; flex: 1; overflow: hidden; font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.favorites-row small { max-width: 92px; overflow: hidden; color: #83909a; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.favorites-row b { color: #c8ad7d; font-size: 11px; font-weight: 500; }
+.favorites-empty { padding: 15px 5px; color: #9aa6af; font-size: 10px; line-height: 1.5; }
+.profile-preferences { display: flex; flex-direction: column; gap: 6px; }
+.profile-preferences label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 11px;
+  border: 1px solid rgba(255,255,255,.065);
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
+}
+.profile-preferences label > span { display: flex; flex-direction: column; gap: 3px; }
+.profile-preferences strong { color: #e5eaed; font-size: 10px; font-weight: 650; }
+.profile-preferences small { color: #84919a; font-size: 8px; }
+.profile-preferences input { width: 17px; height: 17px; accent-color: #d8b779; }
+.profile-avatar-photo { display: block; object-fit: cover; }
+.profile-trigger-photo { width: 25px; height: 25px; flex: 0 0 25px; border: 1px solid rgba(232,205,157,.48); border-radius: 9px; object-fit: cover; }
+.map-actions { bottom: max(78px, calc(env(safe-area-inset-bottom) + 68px)); }
+.nearest-panel { bottom: max(78px, calc(env(safe-area-inset-bottom) + 68px)); }
+.stop-sheet { bottom: max(73px, calc(env(safe-area-inset-bottom) + 66px)); max-height: min(72dvh, 650px); }
+@media (max-width: 380px) {
+  .bottom-nav { min-height: 54px; }
+  .schedule-panel { max-height: 24dvh; padding: 8px; }
+  .schedule-route { padding: 7px 1px; }
+  .favorites-panel { max-height: 38dvh; }
+}
+
+.app-shell.map-muted .leaflet-tile-pane {
+  filter: saturate(.58) contrast(1.04) brightness(.96);
+  transition: filter .2s ease;
+}

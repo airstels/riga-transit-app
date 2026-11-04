@@ -18,6 +18,67 @@ interface Report {
   user?: string;
 }
 interface Coordinates { lat: number; lon: number; accuracy?: number }
+type TimetableEntry = [string, string, string, string, string, string, string];
+interface CalendarService { service_id: string; monday: string; tuesday: string; wednesday: string; thursday: string; friday: string; saturday: string; sunday: string; start_date: string; end_date: string }
+interface CalendarException { service_id: string; date: string; exception_type: string }
+interface DepartureGroup { key: string; route: string; routeName: string; routeType: string; headsign: string; departures: Date[] }
+let timetableIndexCache: Record<string, number> | null = null;
+const timetableShardCache = new Map<number, Record<string, TimetableEntry[]>>();
+
+function serviceRunsOn(serviceId: string, date: Date, calendar: CalendarService[], exceptions: CalendarException[]): boolean {
+  const dateKey = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+  const exception = exceptions.find(item => item.service_id === serviceId && item.date === dateKey);
+  if (exception) return exception.exception_type === '1';
+  const service = calendar.find(item => item.service_id === serviceId);
+  if (!service || dateKey < service.start_date || dateKey > service.end_date) return false;
+  const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()] as keyof CalendarService;
+  return service[day] === '1';
+}
+
+function buildUpcomingDepartures(entries: TimetableEntry[], calendar: CalendarService[], exceptions: CalendarException[], now: number): DepartureGroup[] {
+  if (!calendar.length && !exceptions.length) return [];
+  const groups = new Map<string, DepartureGroup>();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  const end = now + 24 * 60 * 60 * 1000;
+  for (let offset = 0; offset <= 2; offset++) {
+    const serviceDate = new Date(start);
+    serviceDate.setDate(serviceDate.getDate() - offset);
+    for (const entry of entries) {
+      const [time, route, routeName, routeType, serviceId, headsign, directionId] = entry;
+      if (!serviceRunsOn(serviceId, serviceDate, calendar, exceptions)) continue;
+      const parts = time.split(':').map(Number);
+      if (parts.length !== 3 || parts.some(value => !Number.isFinite(value))) continue;
+      const departure = new Date(serviceDate.getTime() + (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000);
+      if (departure.getTime() <= now || departure.getTime() > end) continue;
+      const key = `${route}|${headsign}|${directionId}`;
+      const group = groups.get(key) ?? { key, route, routeName, routeType, headsign, departures: [] };
+      group.departures.push(departure);
+      groups.set(key, group);
+    }
+  }
+  return Array.from(groups.values()).map(group => ({
+    ...group,
+    departures: group.departures.sort((a, b) => a.getTime() - b.getTime()).slice(0, 3),
+  })).sort((a, b) => (a.departures[0]?.getTime() ?? 0) - (b.departures[0]?.getTime() ?? 0));
+}
+
+function transportType(type: string): string {
+  if (type === '0') return 'Трамвай';
+  if (type === '11') return 'Троллейбус';
+  if (type === '2') return 'Поезд';
+  if (type === '4') return 'Паром';
+  return 'Автобус';
+}
+
+function formatDeparture(date: Date, now: number): string {
+  const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (date.toDateString() === tomorrow.toDateString()) return `${time} · завтра`;
+  return time;
+}
+
 interface TelegramUser { first_name?: string; last_name?: string; photo_url?: string }
 interface TelegramWebApp {
   ready(): void;
@@ -196,6 +257,65 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [profileNameDraft, setProfileNameDraft] = useState('');
+  const [calendarData, setCalendarData] = useState<{ calendar: CalendarService[]; exceptions: CalendarException[] }>({ calendar: [], exceptions: [] });
+  const [calendarStatus, setCalendarStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [scheduleEntries, setScheduleEntries] = useState<TimetableEntry[]>([]);
+  const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'loading' | 'ready' | 'empty' | 'error'>('idle');
+  const [scheduleClock, setScheduleClock] = useState(Date.now());
+  const [activeTab, setActiveTab] = useState<'map' | 'favorites'>('map');
+  const [showStopMarkers, setShowStopMarkers] = useState(true);
+  const [showNearbyPanel, setShowNearbyPanel] = useState(true);
+  const [mapMuted, setMapMuted] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetch('/data/gtfs/calendar.json').then(response => { if (!response.ok) throw new Error('calendar'); return response.json() as Promise<CalendarService[]>; }),
+      fetch('/data/gtfs/calendar_dates.json').then(response => { if (!response.ok) throw new Error('calendar_dates'); return response.json() as Promise<CalendarException[]>; }),
+    ]).then(([calendar, exceptions]) => {
+      if (!cancelled) { setCalendarData({ calendar, exceptions }); setCalendarStatus('ready'); }
+    }).catch(error => { console.warn('Не удалось загрузить календарь GTFS', error); if (!cancelled) setCalendarStatus('error'); });
+    const timer = window.setInterval(() => setScheduleClock(Date.now()), 30000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedStop) { setScheduleEntries([]); setScheduleStatus('idle'); return; }
+    let cancelled = false;
+    setScheduleStatus('loading');
+    setScheduleEntries([]);
+    const load = async () => {
+      try {
+        if (!timetableIndexCache) {
+          const response = await fetch('/data/gtfs/timetable-index.json');
+          if (!response.ok) throw new Error('Расписание пока не опубликовано');
+          timetableIndexCache = await response.json() as Record<string, number>;
+        }
+        const shardId = timetableIndexCache[selectedStop.id];
+        if (typeof shardId !== 'number') {
+          if (!cancelled) setScheduleStatus('empty');
+          return;
+        }
+        let shard = timetableShardCache.get(shardId);
+        if (!shard) {
+          const response = await fetch(`/data/gtfs/timetables/${String(shardId).padStart(2, '0')}.json`);
+          if (!response.ok) throw new Error('Не удалось загрузить расписание');
+          shard = await response.json() as Record<string, TimetableEntry[]>;
+          timetableShardCache.set(shardId, shard);
+        }
+        const entries = shard[selectedStop.id] ?? [];
+        if (!cancelled) {
+          setScheduleEntries(entries);
+          setScheduleStatus(entries.length ? 'ready' : 'empty');
+        }
+      } catch (error) {
+        console.warn('Ошибка загрузки расписания остановки', error);
+        if (!cancelled) setScheduleStatus('error');
+      }
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, [selectedStop?.id]);
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -208,6 +328,9 @@ function App() {
     }
     try {
       const savedProfileName = localStorage.getItem('riga-profile-name') ?? '';
+      setShowStopMarkers(localStorage.getItem('riga-show-stops') !== 'false');
+      setShowNearbyPanel(localStorage.getItem('riga-show-nearby') !== 'false');
+      setMapMuted(localStorage.getItem('riga-map-muted') === 'true');
       setProfileName(savedProfileName);
       setProfileNameDraft(savedProfileName);
       const savedFavorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? '[]');
@@ -247,6 +370,10 @@ function App() {
     })).sort((a, b) => a.distance - b.distance).slice(0, 3);
   }, [position]);
 
+  const upcomingDepartures = useMemo(() => buildUpcomingDepartures(
+    scheduleEntries, calendarData.calendar, calendarData.exceptions, scheduleClock,
+  ), [scheduleEntries, calendarData, scheduleClock]);
+
   const selectedReports = useMemo(() => selectedStop
     ? reports.filter(report => report.stopId === selectedStop.id).sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8)
     : [], [reports, selectedStop]);
@@ -260,6 +387,11 @@ function App() {
     } catch (error) {
       console.warn('Не удалось сохранить сообщение на устройстве', error);
     }
+  };
+
+  const savePreference = (key: string, value: boolean, setter: (value: boolean) => void) => {
+    setter(value);
+    try { localStorage.setItem(key, String(value)); } catch (error) { console.warn('Не удалось сохранить настройку', error); }
   };
 
   const saveProfileName = () => {
@@ -339,7 +471,7 @@ function App() {
   };
 
   return (
-    <main className="app-shell">
+    <main className={mapMuted ? "app-shell map-muted" : "app-shell"}>
       <MapContainer center={CENTER} zoom={14.5} className="map-canvas" zoomControl={false} preferCanvas>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -349,7 +481,7 @@ function App() {
         <MapResize />
         <MapZoomControl />
         <MapFocus target={mapTarget} />
-        <StopLayer stops={activeStops} selectedStop={selectedStop} onSelect={selectStop} />
+        {showStopMarkers && <StopLayer stops={activeStops} selectedStop={selectedStop} onSelect={selectStop} />}
         {position && <>
           <Circle center={[position.lat, position.lon]} radius={position.accuracy ?? 30}
             pathOptions={{ color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.09, weight: 1 }} />
@@ -365,7 +497,7 @@ function App() {
               <div className="brand-title"><span className="brand-mark">R</span> Riga Transit</div>
               <div className="brand-subtitle">ГОРОДСКОЙ ТРАНСПОРТ · RĪGA</div>
             </div>
-            <button className="user-chip profile-trigger" onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }} aria-label="Открыть профиль"><span className="profile-trigger-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase("ru-RU")}</span><span>Профиль</span><span className="profile-trigger-chevron">↗</span></button>
+            <button className="user-chip profile-trigger" onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }} aria-label="Открыть профиль">{user?.photo_url ? <img className="profile-trigger-photo" src={user.photo_url} alt="" /> : <span className="profile-trigger-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase("ru-RU")}</span>}<span>Профиль</span><span className="profile-trigger-chevron">↗</span></button>
           </div>
           <div className="search-wrap">
             <span className="search-icon" aria-hidden="true">⌕</span>
@@ -423,10 +555,10 @@ function App() {
               <button className="close-sheet" onClick={() => setShowProfile(false)} aria-label="Закрыть профиль">×</button>
             </div>
             <div className="profile-identity">
-              <div className="profile-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase("ru-RU")}</div>
+              {user?.photo_url ? <img className="profile-avatar profile-avatar-photo" src={user.photo_url} alt="" /> : <div className="profile-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase("ru-RU")}</div>}
               <div className="profile-identity-copy">
                 <h2 id="profile-title">{profileName || [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Гость Riga Transit"}</h2>
-                <span className="profile-status"><i /> {user ? "Подключено через Telegram" : "Локальный профиль"}</span>
+                <span className="profile-status"><i /> {user ? "Имя получено из Telegram Mini App" : "Локальный профиль"}</span>
               </div>
             </div>
             <div className="profile-name-edit">
@@ -447,6 +579,12 @@ function App() {
               <button onClick={openProfileQuickList}><span className="profile-link-icon">★</span><span><strong>Мои остановки</strong><small>Избранное и недавние просмотры</small></span><b>↗</b></button>
               <button onClick={() => { setShowProfile(false); setPosition(null); setGpsState("idle"); setGpsError(""); }}><span className="profile-link-icon">◎</span><span><strong>Сбросить геолокацию</strong><small>Убрать мою позицию с карты</small></span><b>↗</b></button>
             </div>
+            <div className="profile-section-title">НАСТРОЙКИ КАРТЫ</div>
+            <div className="profile-preferences">
+              <label><span><strong>Остановки на карте</strong><small>Показывать маркеры остановок</small></span><input type="checkbox" checked={showStopMarkers} onChange={event => savePreference('riga-show-stops', event.target.checked, setShowStopMarkers)} /></label>
+              <label><span><strong>Ближайшие остановки</strong><small>Показывать список рядом со мной</small></span><input type="checkbox" checked={showNearbyPanel} onChange={event => savePreference('riga-show-nearby', event.target.checked, setShowNearbyPanel)} /></label>
+              <label><span><strong>Приглушённая карта</strong><small>Менее яркая подложка карты</small></span><input type="checkbox" checked={mapMuted} onChange={event => savePreference('riga-map-muted', event.target.checked, setMapMuted)} /></label>
+            </div>
             <div className="profile-footnote">Данные профиля и избранное хранятся локально. Серверная учётная запись и синхронизация пока не подключены.</div>
           </section>
         </div>
@@ -461,7 +599,7 @@ function App() {
 
       {gpsError && <div className="gps-error" role="status">{gpsError}<button onClick={() => setGpsError('')}>×</button></div>}
 
-      {position && nearestStops.length > 0 && !selectedStop && (
+      {showNearbyPanel && position && nearestStops.length > 0 && !selectedStop && (
         <aside className="nearest-panel glass">
           <div className="panel-eyebrow">РЯДОМ С ВАМИ</div>
           {nearestStops.slice(0, 3).map(({ stop, distance }, index) => (
@@ -484,6 +622,25 @@ function App() {
                   {selectedStop.routes.map(route => <span key={route}>№ {route}</span>)}
                 </div>
               )}
+              <div className="schedule-panel">
+                <div className="schedule-heading"><span>РАСПИСАНИЕ ПО МАРШРУТАМ</span><small>ПЛАНОВОЕ</small></div>
+                {scheduleStatus === 'loading' && <div className="schedule-message">Загружаем расписание…</div>}
+                {scheduleStatus === 'error' && <div className="schedule-message">Расписание временно недоступно. Попробуйте открыть остановку ещё раз.</div>}
+                {scheduleStatus === 'empty' && <div className="schedule-message">Для этой остановки нет опубликованных отправлений в текущем наборе GTFS.</div>}
+                {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-message">Загружаем календарь движения…</div>}
+                {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-message">Не удалось загрузить календарь расписания. Проверьте подключение и откройте остановку ещё раз.</div>}
+                {scheduleStatus === 'ready' && calendarStatus === 'ready' && upcomingDepartures.length === 0 && <div className="schedule-message">На ближайшие 24 часа плановых отправлений не найдено.</div>}
+                {upcomingDepartures.map(group => (
+                  <article className="schedule-route" key={group.key}>
+                    <div className="schedule-route-main">
+                      <span className="schedule-route-number">{group.route}</span>
+                      <span className="schedule-route-copy"><strong>{group.headsign || group.routeName || 'Маршрут'}</strong><small>{transportType(group.routeType)} · {group.routeName}</small></span>
+                    </div>
+                    <div className="schedule-times">{group.departures.map((departure, index) => <span className={index === 0 ? 'schedule-time next' : 'schedule-time'} key={departure.toISOString()}>{formatDeparture(departure, scheduleClock)}</span>)}</div>
+                  </article>
+                ))}
+                <div className="schedule-footnote">Плановое расписание Rīgas satiksme · не отображает задержки в реальном времени</div>
+              </div>
             </div>
             <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? "Убрать из избранного" : "Добавить в избранное"} title={favoriteIds.includes(selectedStop.id) ? "В избранном" : "В избранное"}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setShowAddForm(false); }} aria-label="Закрыть">×</button></div>
           </div>
@@ -526,6 +683,24 @@ function App() {
           <div className="data-note"><span className="data-check">✓</span> Официальные данные Rīgas satiksme · {gtfsMetadata.importedAt}</div>
         </section>
       )}
+
+      {activeTab === 'favorites' && !selectedStop && (
+        <aside className="favorites-panel glass">
+          <div className="favorites-panel-heading"><span>МОИ ОСТАНОВКИ</span><small>{favoriteIds.length} В ИЗБРАННОМ</small></div>
+          {favoriteIds.length === 0 ? <div className="favorites-empty">Пока нет избранных остановок. Открой карточку остановки и нажми ☆.</div> :
+            favoriteIds.map(id => activeStops.find(stop => stop.id === id)).filter((stop): stop is Stop => Boolean(stop)).map(stop => (
+              <button className="favorites-row" key={stop.id} onClick={() => { setActiveTab('map'); selectStop(stop); }}>
+                <span className="favorites-star">★</span><span className="favorites-name">{stop.name}</span><small>{stop.routes?.slice(0, 4).join(' · ') || 'Остановка'}</small><b>↗</b>
+              </button>
+            ))}
+        </aside>
+      )}
+
+      <nav className="bottom-nav" aria-label="Основная навигация">
+        <button className={activeTab === 'map' ? 'active' : ''} onClick={() => { setActiveTab('map'); setSelectedStop(null); setSearchOpen(false); }}><span>⌖</span><small>Карта</small></button>
+        <button className={activeTab === 'favorites' ? 'active' : ''} onClick={() => { setActiveTab('favorites'); setSelectedStop(null); setSearchOpen(false); }}><span>☆</span><small>Избранное</small></button>
+        <button onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }}><span>◉</span><small>Профиль</small></button>
+      </nav>
 
       
     </main>
