@@ -36,12 +36,12 @@ def read_csv(source: zipfile.ZipFile | Path, filename: str) -> list[dict[str, st
         return list(csv.DictReader(stream))
 
 
-def valid_float(value: str | None) -> float | None:
+def valid_float(value: str | None, minimum: float, maximum: float) -> float | None:
     try:
         number = float(value or "")
     except (TypeError, ValueError):
         return None
-    if not (-90 <= number <= 90):
+    if not (minimum <= number <= maximum):
         return None
     return number
 
@@ -77,11 +77,9 @@ def import_feed(source: zipfile.ZipFile | Path) -> tuple[list[dict], dict]:
     for row in stop_rows:
         stop_id = row.get("stop_id", "").strip()
         name = row.get("stop_name", "").strip()
-        lat = valid_float(row.get("stop_lat"))
-        lon = valid_float(row.get("stop_lon"))
+        lat = valid_float(row.get("stop_lat"), -90, 90)
+        lon = valid_float(row.get("stop_lon"), -180, 180)
         if not stop_id or stop_id in seen or not name or lat is None or lon is None:
-            continue
-        if not (-180 <= lon <= 180):
             continue
         # Keep parent station/platform relationships as published by the agency;
         # remove only obviously non-passenger records with no usable coordinates.

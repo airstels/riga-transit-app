@@ -32,6 +32,7 @@ declare global {
 const CENTER: [number, number] = [56.9496, 24.1052];
 const STORAGE_KEY = 'riga-reports';
 const MAX_REPORTS = 100;
+const REPORT_TTL_MS = 2 * 60 * 60 * 1000;
 const REPORT_TYPES: { id: ReportType; label: string; color: string; dot: string }[] = [
   { id: 'check', label: 'Проверка', color: 'bg-red-500/20 text-red-300', dot: '#ef4444' },
   { id: 'crowded', label: 'Переполнен', color: 'bg-orange-500/20 text-orange-300', dot: '#f97316' },
@@ -108,7 +109,7 @@ function App() {
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          setReports(parsed.filter(isReport).filter(item => activeStops.some(stop => stop.id === item.stopId)).slice(0, MAX_REPORTS));
+          setReports(parsed.filter(isReport).filter(item => item.createdAt !== undefined && Date.now() - item.createdAt <= REPORT_TTL_MS && activeStops.some(stop => stop.id === item.stopId)).slice(0, MAX_REPORTS));
         }
       }
     } catch (error) {
@@ -138,7 +139,8 @@ function App() {
     : [], [reports, selectedStop]);
 
   const persistReports = (next: Report[]) => {
-    const limited = next.slice(0, MAX_REPORTS);
+    const cutoff = Date.now() - REPORT_TTL_MS;
+    const limited = next.filter(item => item.createdAt !== undefined && item.createdAt >= cutoff).slice(0, MAX_REPORTS);
     setReports(limited);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(limited));
@@ -300,7 +302,7 @@ function App() {
             <button className="close-sheet" onClick={() => { setSelectedStop(null); setShowAddForm(false); }} aria-label="Закрыть">×</button>
           </div>
 
-          <div className="reports-heading"><span>Сообщения сообщества</span><span className="local-label">только на этом устройстве</span></div>
+          <div className="reports-heading"><span>Сообщения сообщества</span><span className="local-label">локально · актуально 2 часа</span></div>
           <div className="reports-list">
             {selectedReports.length === 0 ? (
               <div className="empty-reports"><span>◌</span><p>Пока нет сообщений</p><small>Добавь первое наблюдение об этой остановке</small></div>
