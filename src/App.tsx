@@ -53,7 +53,7 @@ function buildUpcomingDepartures(entries: TimetableEntry[], calendar: CalendarSe
       const departure = new Date(serviceDate.getTime() + (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000);
       if (departure.getTime() <= now || departure.getTime() > end) continue;
       const key = `${route}|${headsign}|${directionId}`;
-      const group = groups.get(key) ?? { key, route, routeName, routeType, headsign, directionId, departures: [] };
+      const group: DepartureGroup = groups.get(key) ?? { key, route, routeName, routeType, headsign, directionId, departures: [] };
       group.departures.push(departure);
       groups.set(key, group);
     }
@@ -83,7 +83,7 @@ function buildDeparturesForDate(entries: TimetableEntry[], calendar: CalendarSer
       const departure = new Date(serviceDate.getTime() + (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000);
       if (departure < dayStart || departure >= dayEnd) continue;
       const key = route + '|' + headsign + '|' + directionId;
-      const group = groups.get(key) ?? { key, route, routeName, routeType, headsign, departures: [] };
+      const group: DepartureGroup = groups.get(key) ?? { key, route, routeName, routeType, headsign, directionId, departures: [] };
       group.departures.push(departure);
       groups.set(key, group);
     }
