@@ -656,6 +656,10 @@ function App() {
                     <button key={filter.id} className={scheduleTransportFilter === filter.id ? 'active' : ''} onClick={() => setScheduleTransportFilter(filter.id)}>{filter.label}</button>
                   ))}
                 </div>
+                {!scheduleViewOpen && <div className="schedule-open-row">
+                  <div><strong>Расписание на весь день</strong><small>Все рейсы и направления</small></div>
+                  <button onClick={() => { setScheduleDateOffset(0); setScheduleViewOpen(true); }}>Открыть <span>↗</span></button>
+                </div>}
                 {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем расписание остановки…</div>}
                 {scheduleStatus === 'error' && <div className="schedule-state">Не удалось загрузить расписание. Проверьте соединение и откройте остановку ещё раз.</div>}
                 {scheduleStatus === 'empty' && <div className="schedule-state">Для этой остановки нет опубликованных отправлений.</div>}
@@ -691,6 +695,37 @@ function App() {
                     </article>
                   );
                 })}
+
+                {scheduleViewOpen && <div className="full-schedule-view">
+                  <div className="full-schedule-toolbar">
+                    <div><strong>Полное расписание</strong><small>{selectedStop.name} · все отправления</small></div>
+                    <button onClick={() => setScheduleViewOpen(false)} aria-label="Закрыть полное расписание">×</button>
+                  </div>
+                  <div className="schedule-date-tabs" role="group" aria-label="Дата расписания">
+                    <button className={scheduleDateOffset === 0 ? 'active' : ''} onClick={() => setScheduleDateOffset(0)}>Сегодня</button>
+                    <button className={scheduleDateOffset === 1 ? 'active' : ''} onClick={() => setScheduleDateOffset(1)}>Завтра</button>
+                    <span>{selectedScheduleDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', weekday: 'short' })}</span>
+                  </div>
+                  {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleFullDayDepartures.length === 0 && <div className="schedule-state">На выбранную дату отправлений не найдено.</div>}
+                  {visibleFullDayDepartures.map(group => <article className="full-route-group" key={group.key}>
+                    <div className="full-route-heading">
+                      <span className={'schedule-vehicle-icon type-' + group.routeType}>{transportIcon(group.routeType)}</span>
+                      <span className="schedule-route-number">{group.route}</span>
+                      <span className="full-route-copy"><strong>{group.headsign || group.routeName || 'Направление не указано'}</strong><small>{transportType(group.routeType)} · {group.departures.length} рейсов</small></span>
+                    </div>
+                    <div className="full-departure-list">
+                      {group.departures.map(departure => {
+                        const passed = departure.getTime() < scheduleClock;
+                        const isNext = !passed && !group.departures.some(item => item.getTime() >= scheduleClock && item.getTime() < departure.getTime());
+                        return <div className={passed ? 'full-departure passed' : isNext ? 'full-departure next' : 'full-departure'} key={departure.toISOString()}>
+                          <strong>{departure.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</strong>
+                          <small>{passed ? 'Прошёл' : isNext ? 'Следующий рейс' : 'По расписанию'}</small>
+                        </div>;
+                      })}
+                    </div>
+                  </article>)}
+                  <div className="schedule-footnote"><span>ⓘ</span> Плановые времена GTFS. Реальные задержки и GPS транспорта не учитываются.</div>
+                </div>}
                 <div className="schedule-footnote"><span>ⓘ</span> Время плановое. Фактические задержки и движение транспорта здесь не отображаются.</div>
               </div>
             </div>
