@@ -436,13 +436,18 @@ function StopLayer({ stops: mapStops, selectedStop, onSelect }: { stops: Stop[];
     </>
   );
 }
-function MapZoomControl() {
+function MapZoomControl({ language }: { language: AppLanguage }) {
   const map = useMap();
+  const labels = language === 'ru'
+    ? ['Управление масштабом карты', 'Приблизить карту', 'Отдалить карту']
+    : language === 'lv'
+      ? ['Kartes mēroga vadība', 'Tuvināt karti', 'Tālināt karti']
+      : ['Map zoom controls', 'Zoom in', 'Zoom out'];
   return (
-    <div className="zoom-control" aria-label={t('mapZoom')}>
-      <button onClick={() => map.zoomIn()} aria-label={t('zoomIn')}>+</button>
+    <div className="zoom-control" aria-label={labels[0]}>
+      <button onClick={() => map.zoomIn()} aria-label={labels[1]}>+</button>
       <span />
-      <button onClick={() => map.zoomOut()} aria-label={t('zoomOut')}>−</button>
+      <button onClick={() => map.zoomOut()} aria-label={labels[2]}>−</button>
     </div>
   );
 }
@@ -746,7 +751,7 @@ function App() {
           maxZoom={19}
         />
         <MapResize />
-        <MapZoomControl />
+        <MapZoomControl language={language} />
         <MapFocus target={mapTarget} />
         {showStopMarkers && <StopLayer stops={activeStops} selectedStop={selectedStop} onSelect={selectStop} />}
         {position && <>
