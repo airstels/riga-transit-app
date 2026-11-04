@@ -80,11 +80,11 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   favoritesTab: { ru: 'Избранное', lv: 'Izlase', en: 'Favorites' },
   whereAmI: { ru: 'Где я', lv: 'Kur es esmu', en: 'Locate me' },
   locating: { ru: 'Определяем…', lv: 'Nosaka atrašanās vietu…', en: 'Locating…' },
-  loadingSchedule: { ru: 'Загружаем расписание остановки…', lv: 'Ielādē pieturas sarakstu…', en: 'Loading stop timetable…' },
-  scheduleError: { ru: 'Не удалось загрузить расписание. Проверьте соединение и откройте остановку ещё раз.', lv: 'Neizdevās ielādēt sarakstu. Pārbaudiet savienojumu un atveriet pieturu vēlreiz.', en: 'Could not load the timetable. Check your connection and reopen the stop.' },
-  noDepartures: { ru: 'Для этой остановки нет опубликованных отправлений.', lv: 'Šai pieturai nav publicētu reisu.', en: 'No published departures for this stop.' },
-  calendarLoading: { ru: 'Проверяем дни и календарь движения…', lv: 'Pārbauda kustības kalendāru…', en: 'Checking service calendar…' },
-  noTodayTrips: { ru: 'На выбранную дату отправлений не найдено.', lv: 'Izvēlētajā datumā reisi nav atrasti.', en: 'No departures found for the selected date.' },
+  loadingSchedule: { ru: t('loadingSchedule'), lv: 'Ielādē pieturas sarakstu…', en: 'Loading stop timetable…' },
+  scheduleError: { ru: t('scheduleError'), lv: 'Neizdevās ielādēt sarakstu. Pārbaudiet savienojumu un atveriet pieturu vēlreiz.', en: 'Could not load the timetable. Check your connection and reopen the stop.' },
+  noDepartures: { ru: t('noDepartures'), lv: 'Šai pieturai nav publicētu reisu.', en: 'No published departures for this stop.' },
+  calendarLoading: { ru: t('calendarLoading'), lv: 'Pārbauda kustības kalendāru…', en: 'Checking service calendar…' },
+  noTodayTrips: { ru: t('noTodayTrips'), lv: 'Izvēlētajā datumā reisi nav atrasti.', en: 'No departures found for the selected date.' },
   favoritesEmpty: { ru: 'Пока нет избранных остановок. Открой карточку остановки и нажми ☆.', lv: 'Izlasē vēl nav pieturu. Atver pieturas kartīti un nospied ☆.', en: 'No favorite stops yet. Open a stop card and tap ☆.' },
   stopSingular: { ru: t('stopSingular'), lv: 'Sabiedriskā transporta pietura', en: 'Public transport stop' },
 };
@@ -682,7 +682,7 @@ function App() {
           <div className="brand-row">
             <div>
               <div className="brand-title"><span className="brand-mark">R</span> Riga Transit</div>
-              <div className="brand-subtitle">ГОРОДСКОЙ ТРАНСПОРТ · RĪGA</div>
+              <div className="brand-subtitle">{language === 'ru' ? 'ГОРОДСКОЙ ТРАНСПОРТ · RĪGA' : language === 'lv' ? 'PILSĒTAS TRANSPORTS · RĪGA' : 'CITY TRANSPORT · RĪGA'}</div>
             </div>
             <button className="user-chip profile-trigger" onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }} aria-label={t('profile')}>{user?.photo_url ? <img className="profile-trigger-photo" src={user.photo_url} alt="" /> : <span className="profile-trigger-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase("ru-RU")}</span>}<span>{t('profile')}</span><span className="profile-trigger-chevron">↗</span></button>
           </div>
@@ -729,7 +729,7 @@ function App() {
             </div>
           )}
           {searchOpen && search.trim() && matchingStops.length === 0 && (
-            <div className="search-empty">Ничего не найдено по запросу «{search}»</div>
+            <div className="search-empty">{t('nothingFound')} «{search}»</div>
           )}
         </header>
       </section>
@@ -813,7 +813,7 @@ function App() {
           <div className="sheet-handle" />
           <div className="sheet-heading">
             <div>
-              <div className="panel-eyebrow">ОСТАНОВКА · {gtfsMetadata.importedAt ? 'ОФИЦИАЛЬНЫЕ ДАННЫЕ' : 'ДЕМО-КАТАЛОГ'}</div>
+              <div className="panel-eyebrow">{t('stop')} · {gtfsMetadata.importedAt ? t('officialData') : t('demoCatalog')}</div>
               <h2>{selectedStop.name}</h2>
               {selectedStop.routes && selectedStop.routes.length > 0 && (
                 <div className="route-chips">
@@ -935,14 +935,14 @@ function App() {
                         const isNext = !passed && !group.departures.some(item => item.getTime() >= scheduleClock && item.getTime() < departure.getTime());
                         return <div className={passed ? 'full-departure passed' : isNext ? 'full-departure next' : 'full-departure'} key={departure.toISOString()}>
                           <strong>{departure.toLocaleTimeString(localeCode, { hour: '2-digit', minute: '2-digit' })}</strong>
-                          <small>{passed ? 'Прошёл' : isNext ? 'Следующий рейс' : 'По расписанию'}</small>
+                          <small>{passed ? (language === 'ru' ? 'Прошёл' : language === 'lv' ? 'Pagājis' : 'Departed') : isNext ? (language === 'ru' ? 'Следующий рейс' : language === 'lv' ? 'Nākamais reiss' : 'Next departure') : (language === 'ru' ? 'По расписанию' : language === 'lv' ? 'Pēc saraksta' : 'Scheduled')}</small>
                         </div>;
                       })}
                     </div>
                   </article>)}
-                  <div className="schedule-footnote"><span>ⓘ</span> Плановые времена GTFS. Реальные задержки и GPS транспорта не учитываются.</div>
+                  <div className="schedule-footnote"><span>ⓘ</span> {t('plannedTimes')}</div>
                 </div>}
-                <div className="schedule-footnote"><span>ⓘ</span> Время плановое. Фактические задержки и движение транспорта здесь не отображаются.</div>
+                <div className="schedule-footnote"><span>ⓘ</span> {t('plannedTimes')}</div>
               </div>
             </div>
             <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? "Убрать из избранного" : "Добавить в избранное"} title={favoriteIds.includes(selectedStop.id) ? "В избранном" : "В избранное"}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setSelectedRouteDetail(null); setScheduleViewOpen(false); setShowAddForm(false); }} aria-label="Закрыть">×</button></div>
