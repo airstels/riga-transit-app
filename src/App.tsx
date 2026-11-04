@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Circle, CircleMarker, MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { stops, type Stop } from './data/stops';
+import { officialStops, gtfsMetadata } from './data/gtfs-data';
+
+const activeStops: Stop[] = officialStops.length > 0 ? officialStops : stops;
 
 type ReportType = 'check' | 'crowded' | 'delay' | 'empty' | 'other';
 interface Report {
@@ -105,7 +108,7 @@ function App() {
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          setReports(parsed.filter(isReport).filter(item => stops.some(stop => stop.id === item.stopId)).slice(0, MAX_REPORTS));
+          setReports(parsed.filter(isReport).filter(item => activeStops.some(stop => stop.id === item.stopId)).slice(0, MAX_REPORTS));
         }
       }
     } catch (error) {
@@ -116,7 +119,7 @@ function App() {
   const matchingStops = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('lv');
     if (!query) return [];
-    return stops.filter(stop =>
+    return activeStops.filter(stop =>
       stop.name.toLocaleLowerCase('lv').includes(query) ||
       stop.routes?.some(route => route.toLocaleLowerCase().includes(query))
     ).slice(0, 7);
@@ -124,7 +127,7 @@ function App() {
 
   const nearestStops = useMemo(() => {
     if (!position) return [];
-    return stops.map(stop => ({
+    return activeStops.map(stop => ({
       stop,
       distance: distanceKm(position, { lat: stop.lat, lon: stop.lon }),
     })).sort((a, b) => a.distance - b.distance).slice(0, 3);
@@ -203,7 +206,7 @@ function App() {
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
         <MapFocus target={mapTarget} />
-        {stops.map(stop => (
+        {activeStops.map(stop => (
           <Marker key={stop.id} position={[stop.lat, stop.lon]} icon={stopIcon}
             eventHandlers={{ click: () => selectStop(stop) }} />
         ))}
@@ -220,7 +223,7 @@ function App() {
           <div className="brand-row">
             <div>
               <div className="brand-title">Riga Transit <span className="live-dot" /></div>
-              <div className="brand-subtitle">Карта остановок Риги · демо-данные</div>
+              <div className="brand-subtitle">Карта остановок Риги · {gtfsMetadata.importedAt ? 'официальные GTFS' : 'демо-данные'}</div>
             </div>
             <div className="user-chip">{user?.first_name ? `Привет, ${user.first_name}` : 'RĪGA'}</div>
           </div>
@@ -286,7 +289,7 @@ function App() {
           <div className="sheet-handle" />
           <div className="sheet-heading">
             <div>
-              <div className="panel-eyebrow">ОСТАНОВКА · ДЕМО-КАТАЛОГ</div>
+              <div className="panel-eyebrow">ОСТАНОВКА · {gtfsMetadata.importedAt ? 'ОФИЦИАЛЬНЫЕ ДАННЫЕ' : 'ДЕМО-КАТАЛОГ'}</div>
               <h2>{selectedStop.name}</h2>
               {selectedStop.routes && selectedStop.routes.length > 0 && (
                 <div className="route-chips">
@@ -332,7 +335,7 @@ function App() {
               </div>
             </div>
           )}
-          <div className="data-note">Данные остановок и номера линий пока демонстрационные, не использовать для планирования поездки.</div>
+          <div className="data-note">{gtfsMetadata.importedAt ? `GTFS: обновлено ${gtfsMetadata.importedAt}. Расписание и маршруты ещё не реализованы.` : 'Данные остановок и номера линий пока демонстрационные, не использовать для планирования поездки.'}</div>
         </section>
       )}
 
