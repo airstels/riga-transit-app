@@ -59,7 +59,7 @@ function buildUpcomingDepartures(entries: TimetableEntry[], calendar: CalendarSe
   }
   return Array.from(groups.values()).map(group => ({
     ...group,
-    departures: group.departures.sort((a, b) => a.getTime() - b.getTime()).slice(0, 3),
+    departures: group.departures.sort((a, b) => a.getTime() - b.getTime()).slice(0, 12),
   })).sort((a, b) => (a.departures[0]?.getTime() ?? 0) - (b.departures[0]?.getTime() ?? 0));
 }
 
@@ -69,6 +69,16 @@ function transportType(type: string): string {
   if (type === '2') return 'Поезд';
   if (type === '4') return 'Паром';
   return 'Автобус';
+}
+
+function minutesUntil(date: Date, now: number): number { return Math.max(0, Math.ceil((date.getTime() - now) / 60000)); }
+
+function transportIcon(type: string): string {
+  if (type === '0') return '🚋';
+  if (type === '11') return '🚎';
+  if (type === '2') return '🚆';
+  if (type === '4') return '⛴';
+  return '🚌';
 }
 
 function departureDayLabel(date: Date, now: number): string {
@@ -267,6 +277,8 @@ function App() {
   const [scheduleEntries, setScheduleEntries] = useState<TimetableEntry[]>([]);
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'loading' | 'ready' | 'empty' | 'error'>('idle');
   const [scheduleClock, setScheduleClock] = useState(Date.now());
+  const [scheduleTransportFilter, setScheduleTransportFilter] = useState('all');
+  const [expandedScheduleRoutes, setExpandedScheduleRoutes] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'map' | 'favorites'>('map');
   const [showStopMarkers, setShowStopMarkers] = useState(true);
   const [showNearbyPanel, setShowNearbyPanel] = useState(true);
@@ -378,6 +390,8 @@ function App() {
   const upcomingDepartures = useMemo(() => buildUpcomingDepartures(
     scheduleEntries, calendarData.calendar, calendarData.exceptions, scheduleClock,
   ), [scheduleEntries, calendarData, scheduleClock]);
+
+  const visibleDepartures = useMemo(() => scheduleTransportFilter === 'all' ? upcomingDepartures : upcomingDepartures.filter(group => group.routeType === scheduleTransportFilter), [upcomingDepartures, scheduleTransportFilter]);
 
   const selectedReports = useMemo(() => selectedStop
     ? reports.filter(report => report.stopId === selectedStop.id).sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8)
@@ -630,23 +644,54 @@ function App() {
                 </div>
               )}
               <div className="schedule-panel">
-                <div className="schedule-heading"><span>РАСПИСАНИЕ ПО МАРШРУТАМ</span><small>ПЛАНОВОЕ</small></div>
-                {scheduleStatus === 'loading' && <div className="schedule-message">Загружаем расписание…</div>}
-                {scheduleStatus === 'error' && <div className="schedule-message">Расписание временно недоступно. Попробуйте открыть остановку ещё раз.</div>}
-                {scheduleStatus === 'empty' && <div className="schedule-message">Для этой остановки нет опубликованных отправлений в текущем наборе GTFS.</div>}
-                {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-message">Загружаем календарь движения…</div>}
-                {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-message">Не удалось загрузить календарь расписания. Проверьте подключение и откройте остановку ещё раз.</div>}
-                {scheduleStatus === 'ready' && calendarStatus === 'ready' && upcomingDepartures.length === 0 && <div className="schedule-message">На ближайшие 24 часа плановых отправлений не найдено.</div>}
-                {upcomingDepartures.map(group => (
-                  <article className="schedule-route" key={group.key}>
-                    <div className="schedule-route-main">
-                      <span className="schedule-route-number">{group.route}</span>
-                      <span className="schedule-route-copy"><strong>{group.headsign || group.routeName || 'Маршрут'}</strong><small>{transportType(group.routeType)} · {group.routeName}</small></span>
-                    </div>
-                    <div className="schedule-times">{group.departures.map((departure, index) => <span className={index === 0 ? 'schedule-time next' : 'schedule-time'} key={departure.toISOString()}>{formatDeparture(departure, scheduleClock)}</span>)}</div>
-                  </article>
-                ))}
-                <div className="schedule-footnote">Плановое расписание Rīgas satiksme · не отображает задержки в реальном времени</div>
+                <div className="schedule-panel-top">
+                  <div>
+                    <div className="schedule-heading"><span>ОТПРАВЛЕНИЯ</span><small>ОФИЦИАЛЬНОЕ РАСПИСАНИЕ</small></div>
+                    <div className="schedule-subtitle">Ближайшие рейсы с этой остановки</div>
+                  </div>
+                  <span className="schedule-live-dot" aria-label="Плановое расписание" />
+                </div>
+                <div className="schedule-filter" role="group" aria-label="Фильтр транспорта">
+                  {[{id:'all',label:'Все'}, {id:'3',label:'Автобусы'}, {id:'11',label:'Троллейбусы'}, {id:'0',label:'Трамваи'}].map(filter => (
+                    <button key={filter.id} className={scheduleTransportFilter === filter.id ? 'active' : ''} onClick={() => setScheduleTransportFilter(filter.id)}>{filter.label}</button>
+                  ))}
+                </div>
+                {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем расписание остановки…</div>}
+                {scheduleStatus === 'error' && <div className="schedule-state">Не удалось загрузить расписание. Проверьте соединение и откройте остановку ещё раз.</div>}
+                {scheduleStatus === 'empty' && <div className="schedule-state">Для этой остановки нет опубликованных отправлений.</div>}
+                {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-state">Проверяем дни и календарь движения…</div>}
+                {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">Календарь движения временно недоступен. Попробуйте позже.</div>}
+                {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleDepartures.length === 0 && <div className="schedule-state">{upcomingDepartures.length ? 'Нет рейсов выбранного типа в ближайшие 24 часа.' : 'В ближайшие 24 часа плановых отправлений не найдено.'}</div>}
+                {visibleDepartures.map(group => {
+                  const first = group.departures[0];
+                  const expanded = expandedScheduleRoutes.includes(group.key);
+                  const shown = expanded ? group.departures : group.departures.slice(0, 3);
+                  const minutes = first ? minutesUntil(first, scheduleClock) : 0;
+                  return (
+                    <article className="schedule-route-card" key={group.key}>
+                      <div className="schedule-card-head">
+                        <span className={'schedule-vehicle-icon type-' + group.routeType}>{transportIcon(group.routeType)}</span>
+                        <span className="schedule-route-number">{group.route}</span>
+                        <span className="schedule-route-copy"><strong>{group.headsign || group.routeName || 'Направление не указано'}</strong><small>{transportType(group.routeType)}{group.routeName ? ' · ' + group.routeName : ''}</small></span>
+                        <span className="schedule-next">
+                          <strong>{first ? first.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '—'}</strong>
+                          <small>{first ? departureDayLabel(first, scheduleClock) + ' · ' : ''}{minutes < 1 ? 'сейчас' : minutes < 60 ? 'через ' + minutes + ' мин' : 'через ' + Math.floor(minutes / 60) + ' ч ' + (minutes % 60) + ' мин'}</small>
+                        </span>
+                      </div>
+                      <div className="schedule-departures-label"><span>СЛЕДУЮЩИЕ ОТПРАВЛЕНИЯ</span><span>{group.departures.length} рейсов</span></div>
+                      <div className="schedule-times">
+                        {shown.map((departure, index) => <span className={index === 0 ? 'schedule-time next' : 'schedule-time'} key={departure.toISOString()}>
+                          <strong>{formatDeparture(departure, scheduleClock)}</strong>
+                          {index === 0 && <small>{minutes < 1 ? 'сейчас' : '+' + minutes + ' мин'}</small>}
+                        </span>)}
+                      </div>
+                      {group.departures.length > 3 && <button className="schedule-expand" onClick={() => setExpandedScheduleRoutes(current => expanded ? current.filter(key => key !== group.key) : [...current, group.key])}>
+                        {expanded ? 'Свернуть расписание' : 'Показать ещё ' + (group.departures.length - 3) + ' отправлений'} <span>{expanded ? '⌃' : '⌄'}</span>
+                      </button>}
+                    </article>
+                  );
+                })}
+                <div className="schedule-footnote"><span>ⓘ</span> Время плановое. Фактические задержки и движение транспорта здесь не отображаются.</div>
               </div>
             </div>
             <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? "Убрать из избранного" : "Добавить в избранное"} title={favoriteIds.includes(selectedStop.id) ? "В избранном" : "В избранное"}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setShowAddForm(false); }} aria-label="Закрыть">×</button></div>
