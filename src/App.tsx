@@ -80,13 +80,27 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   favoritesTab: { ru: 'Избранное', lv: 'Izlase', en: 'Favorites' },
   whereAmI: { ru: 'Где я', lv: 'Kur es esmu', en: 'Locate me' },
   locating: { ru: 'Определяем…', lv: 'Nosaka atrašanās vietu…', en: 'Locating…' },
-  loadingSchedule: { ru: t('loadingSchedule'), lv: 'Ielādē pieturas sarakstu…', en: 'Loading stop timetable…' },
-  scheduleError: { ru: t('scheduleError'), lv: 'Neizdevās ielādēt sarakstu. Pārbaudiet savienojumu un atveriet pieturu vēlreiz.', en: 'Could not load the timetable. Check your connection and reopen the stop.' },
-  noDepartures: { ru: t('noDepartures'), lv: 'Šai pieturai nav publicētu reisu.', en: 'No published departures for this stop.' },
-  calendarLoading: { ru: t('calendarLoading'), lv: 'Pārbauda kustības kalendāru…', en: 'Checking service calendar…' },
-  noTodayTrips: { ru: t('noTodayTrips'), lv: 'Izvēlētajā datumā reisi nav atrasti.', en: 'No departures found for the selected date.' },
+  loadingSchedule: { ru: '{t('loadingSchedule')}', lv: 'Ielādē pieturas sarakstu…', en: 'Loading stop timetable…' },
+  scheduleError: { ru: '{t('scheduleError')}', lv: 'Neizdevās ielādēt sarakstu. Pārbaudiet savienojumu un atveriet pieturu vēlreiz.', en: 'Could not load the timetable. Check your connection and reopen the stop.' },
+  noDepartures: { ru: '{t('noDepartures')}', lv: 'Šai pieturai nav publicētu reisu.', en: 'No published departures for this stop.' },
+  calendarLoading: { ru: '{t('calendarLoading')}', lv: 'Pārbauda kustības kalendāru…', en: 'Checking service calendar…' },
+  noTodayTrips: { ru: '{t('noTodayTrips')}', lv: 'Izvēlētajā datumā reisi nav atrasti.', en: 'No departures found for the selected date.' },
   favoritesEmpty: { ru: 'Пока нет избранных остановок. Открой карточку остановки и нажми ☆.', lv: 'Izlasē vēl nav pieturu. Atver pieturas kartīti un nospied ☆.', en: 'No favorite stops yet. Open a stop card and tap ☆.' },
-  stopSingular: { ru: t('stopSingular'), lv: 'Sabiedriskā transporta pietura', en: 'Public transport stop' },
+  stopSingular: { ru: 'Остановка общественного транспорта', lv: 'Sabiedriskā transporta pietura', en: 'Public transport stop' },
+  scheduleLoadingFull: { ru: '{t('scheduleLoadingFull')}', lv: 'Ielādē pilnu kustības sarakstu…', en: 'Loading full timetable…' },
+  scheduleRetry: { ru: '{t('scheduleRetry')}', lv: 'Neizdevās ielādēt sarakstu. Pārbaudiet savienojumu un mēģiniet vēlreiz.', en: 'Could not load the timetable. Check your connection and try again.' },
+  calendarError: { ru: '{t('calendarError')}', lv: 'Kustības kalendārs pašlaik nav pieejams.', en: 'Service calendar is temporarily unavailable.' },
+  noSelectedType: { ru: '{t('noSelectedType')}', lv: 'Tuvāko 24 stundu laikā nav izvēlētā transporta veida reisu.', en: 'No departures of this type in the next 24 hours.' },
+  noUpcoming: { ru: '{t('noUpcoming')}', lv: 'Tuvāko 24 stundu laikā plānotie reisi nav atrasti.', en: 'No scheduled departures found in the next 24 hours.' },
+  routePatternLoading: { ru: '{t('routePatternLoading')}', lv: 'Ielādē maršrutu un pieturas…', en: 'Loading route and stops…' },
+  routePatternError: { ru: '{t('routePatternError')}', lv: 'Neizdevās ielādēt maršruta shēmu. Mēģiniet vēlreiz.', en: 'Could not load route map. Please try again.' },
+  routePatternMissing: { ru: '{t('routePatternMissing')}', lv: 'Publicētajos datos šim virzienam pieturu shēma nav atrasta.', en: 'No stop sequence was found for this direction in the published data.' },
+  routeDirection: { ru: t('routeDirection'), lv: 'Virziens', en: 'Direction' },
+  reportsTitle: { ru: 'Сообщения сообщества', lv: 'Kopienas ziņojumi', en: 'Community reports' },
+  localTwoHours: { ru: 'локально · актуально 2 часа', lv: 'lokāli · derīgi 2 stundas', en: 'local · valid for 2 hours' },
+  noReports: { ru: 'Пока нет сообщений', lv: 'Pagaidām nav ziņojumu', en: 'No reports yet' },
+  addFirstReport: { ru: 'Добавь первое наблюдение об этой остановке', lv: 'Pievienojiet pirmo novērojumu par šo pieturu', en: 'Add the first observation for this stop' },
+  close: { ru: 'Закрыть', lv: 'Aizvērt', en: 'Close' },
 };
 
 type ReportType = 'check' | 'crowded' | 'delay' | 'empty' | 'other';
@@ -843,12 +857,12 @@ function App() {
                   <div><strong>{t('fullDay')}</strong><small>{t('allTrips')}</small></div>
                   <button onClick={() => { setScheduleDateOffset(0); setScheduleSearch(''); setSelectedRouteDetail(null); setScheduleViewOpen(true); }}>{t('open')} <span>↗</span></button>
                 </div>}
-                {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем расписание остановки…</div>}
-                {scheduleStatus === 'error' && <div className="schedule-state">Не удалось загрузить расписание. Проверьте соединение и откройте остановку ещё раз.</div>}
-                {scheduleStatus === 'empty' && <div className="schedule-state">Для этой остановки нет опубликованных отправлений.</div>}
-                {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-state">Проверяем дни и календарь движения…</div>}
-                {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">Календарь движения временно недоступен. Попробуйте позже.</div>}
-                {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleDepartures.length === 0 && <div className="schedule-state">{upcomingDepartures.length ? 'Нет рейсов выбранного типа в ближайшие 24 часа.' : 'В ближайшие 24 часа плановых отправлений не найдено.'}</div>}
+                {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />{t('loadingSchedule')}</div>}
+                {scheduleStatus === 'error' && <div className="schedule-state">{t('scheduleError')}</div>}
+                {scheduleStatus === 'empty' && <div className="schedule-state">{t('noDepartures')}</div>}
+                {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-state">{t('calendarLoading')}</div>}
+                {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">{t('calendarError')}</div>}
+                {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleDepartures.length === 0 && <div className="schedule-state">{upcomingDepartures.length ? '{t('noSelectedType')}' : '{t('noUpcoming')}'}</div>}
                 {visibleDepartures.map(group => {
                   const first = group.departures[0];
                   const expanded = expandedScheduleRoutes.includes(group.key);
@@ -884,12 +898,12 @@ function App() {
                 {scheduleViewOpen && <div className="full-schedule-view">
                   <div className="full-schedule-toolbar">
                     <div><strong>{t('fullSchedule')}</strong><small>{selectedStop.name} · {t('allDepartures')}</small></div>
-                    <button onClick={() => { setScheduleViewOpen(false); setSelectedRouteDetail(null); setScheduleSearch(''); }} aria-label="Закрыть полное расписание">×</button>
+                    <button onClick={() => { setScheduleViewOpen(false); setSelectedRouteDetail(null); setScheduleSearch(''); }} aria-label={t('close')}>×</button>
                   </div>
-                  {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем полное расписание…</div>}
-                  {scheduleStatus === 'error' && <div className="schedule-state">Не удалось загрузить расписание. Проверьте соединение и попробуйте снова.</div>}
-                  {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-state">Загружаем календарь движения…</div>}
-                  {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">Календарь движения временно недоступен.</div>}
+                  {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />{t('scheduleLoadingFull')}</div>}
+                  {scheduleStatus === 'error' && <div className="schedule-state">{t('scheduleRetry')}</div>}
+                  {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-state">{t('calendarLoading')}</div>}
+                  {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">{t('calendarError')}</div>}
                   <label className="schedule-search">
                     <span>⌕</span>
                     <input value={scheduleSearch} onChange={event => setScheduleSearch(event.target.value)} placeholder={t('routeSearch')} aria-label="Поиск по расписанию" />
@@ -901,21 +915,21 @@ function App() {
                     <button className={scheduleDateOffset === 1 ? 'active' : ''} onClick={() => setScheduleDateOffset(1)}>{t('tomorrow')}</button>
                     <span>{selectedScheduleDate.toLocaleDateString(localeCode, { day: 'numeric', month: 'long', weekday: 'short' })}</span>
                   </div>
-                  {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleFullDayDepartures.length === 0 && <div className="schedule-state">На выбранную дату отправлений не найдено.</div>}
+                  {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleFullDayDepartures.length === 0 && <div className="schedule-state">{t('noTodayTrips')}</div>}
                   {selectedRouteDetail ? (
                     <section className="route-detail-view">
                       <button className="route-detail-back" onClick={() => setSelectedRouteDetail(null)}>{t('allRoutes')}</button>
                       <div className="route-detail-title">
                         <span className={'schedule-vehicle-icon type-' + selectedRouteDetail.routeType}>{transportIcon(selectedRouteDetail.routeType)}</span>
                         <span className="schedule-route-number">{selectedRouteDetail.route}</span>
-                        <span><strong>{selectedRouteDetail.headsign || selectedRouteDetail.routeName}</strong><small>{transportType(selectedRouteDetail.routeType, language)} · {selectedRouteDetail.headsign || 'Направление'}</small></span>
+                        <span><strong>{selectedRouteDetail.headsign || selectedRouteDetail.routeName}</strong><small>{transportType(selectedRouteDetail.routeType, language)} · {selectedRouteDetail.headsign || t('routeDirection')}</small></span>
                       </div>
                       <div className="route-detail-caption">{t('routeStops')}</div>
-                      {routePatternsStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем маршрут и остановки…</div>}
-                      {routePatternsStatus === 'error' && <div className="schedule-state">Не удалось загрузить схему маршрута. Попробуйте открыть её ещё раз.</div>}
+                      {routePatternsStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />{t('routePatternLoading')}</div>}
+                      {routePatternsStatus === 'error' && <div className="schedule-state">{t('routePatternError')}</div>}
                       {routePatternsStatus === 'ready' && (() => {
                         const pattern = routePatterns?.find(item => item.route === selectedRouteDetail.route && item.headsign === selectedRouteDetail.headsign && item.directionId === selectedRouteDetail.directionId);
-                        if (!pattern) return <div className="schedule-state">Для этого направления схема остановок в опубликованных данных не найдена.</div>;
+                        if (!pattern) return <div className="schedule-state">{t('routePatternMissing')}</div>;
                         return <ol className="route-stop-list">
                           {pattern.stops.map((item, index) => {
                             const stop = activeStops.find(candidate => candidate.id === item.stopId);
@@ -951,13 +965,13 @@ function App() {
                 <div className="schedule-footnote"><span>ⓘ</span> {t('plannedTimes')}</div>
               </div>
             </div>
-            <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? "Убрать из избранного" : "Добавить в избранное"} title={favoriteIds.includes(selectedStop.id) ? "В избранном" : "В избранное"}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setSelectedRouteDetail(null); setScheduleViewOpen(false); setShowAddForm(false); }} aria-label="Закрыть">×</button></div>
+            <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? "Убрать из избранного" : "Добавить в избранное"} title={favoriteIds.includes(selectedStop.id) ? "В избранном" : "В избранное"}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setSelectedRouteDetail(null); setScheduleViewOpen(false); setShowAddForm(false); }} aria-label={t('close')}>×</button></div>
           </div>
 
-          <div className="reports-heading"><span>Сообщения сообщества</span><span className="local-label">локально · актуально 2 часа</span></div>
+          <div className="reports-heading"><span>{t('reportsTitle')}</span><span className="local-label">{t('localTwoHours')}</span></div>
           <div className="reports-list">
             {selectedReports.length === 0 ? (
-              <div className="empty-reports"><span>◌</span><p>Пока нет сообщений</p><small>Добавь первое наблюдение об этой остановке</small></div>
+              <div className="empty-reports"><span>◌</span><p>{t('noReports')}</p><small>{t('addFirstReport')}</small></div>
             ) : selectedReports.map(report => {
               const type = REPORT_TYPES.find(item => item.id === report.type);
               return <article className="report-card" key={report.id}>
