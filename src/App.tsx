@@ -111,7 +111,7 @@ const clusterIcon = (count: number) => L.divIcon({
   iconAnchor: [18, 18],
 });
 
-function StopLayer({ stops: mapStops, onSelect }: { stops: Stop[]; onSelect: (stop: Stop) => void }) {
+function StopLayer({ stops: mapStops, selectedStop, onSelect }: { stops: Stop[]; selectedStop: Stop | null; onSelect: (stop: Stop) => void }) {
   const map = useMap();
   const [viewport, setViewport] = useState(0);
   useMapEvents({
@@ -154,8 +154,8 @@ function StopLayer({ stops: mapStops, onSelect }: { stops: Stop[]; onSelect: (st
     <>
       {groups.map(group => group.items.length === 1 ? (
         <CircleMarker key={group.items[0].id}
-          center={[group.items[0].lat, group.items[0].lon]} radius={5}
-          pathOptions={{ color: '#ffffff', weight: 1.8, opacity: 1, fillColor: '#168fc5', fillOpacity: 1 }}
+          center={[group.items[0].lat, group.items[0].lon]} radius={selectedStop?.id === group.items[0].id ? 8 : 5}
+          pathOptions={{ color: '#ffffff', weight: selectedStop?.id === group.items[0].id ? 2.5 : 1.8, opacity: 1, fillColor: selectedStop?.id === group.items[0].id ? '#d7ad68' : '#167da8', fillOpacity: 1 }}
           eventHandlers={{ click: () => onSelect(group.items[0]) }} />
       ) : (
         <Marker key={group.items.map(item => item.id).join('|')}
@@ -165,6 +165,17 @@ function StopLayer({ stops: mapStops, onSelect }: { stops: Stop[]; onSelect: (st
     </>
   );
 }
+function MapZoomControl() {
+  const map = useMap();
+  return (
+    <div className="zoom-control" aria-label="Управление масштабом карты">
+      <button onClick={() => map.zoomIn()} aria-label="Приблизить карту">+</button>
+      <span />
+      <button onClick={() => map.zoomOut()} aria-label="Отдалить карту">−</button>
+    </div>
+  );
+}
+
 function App() {
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
@@ -184,8 +195,8 @@ function App() {
     if (tg) {
       tg.ready();
       tg.expand();
-      tg.setHeaderColor?.('#101317');
-      tg.setBackgroundColor?.('#101317');
+      tg.setHeaderColor?.('#111820');
+      tg.setBackgroundColor?.('#111820');
       setUser(tg.initDataUnsafe?.user ?? null);
     }
     try {
@@ -288,13 +299,14 @@ function App() {
     <main className="app-shell">
       <MapContainer center={CENTER} zoom={14.5} className="map-canvas" zoomControl={false} preferCanvas>
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={19}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          subdomains="abcd"
+          maxZoom={20}
         />
         <MapResize />
         <MapFocus target={mapTarget} />
-        <StopLayer stops={activeStops} onSelect={selectStop} />
+        <StopLayer stops={activeStops} selectedStop={selectedStop} onSelect={selectStop} />
         {position && <>
           <Circle center={[position.lat, position.lon]} radius={position.accuracy ?? 30}
             pathOptions={{ color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.09, weight: 1 }} />
@@ -307,13 +319,13 @@ function App() {
         <header className="glass header-card">
           <div className="brand-row">
             <div>
-              <div className="brand-title">Riga Transit <span className="live-dot" /></div>
-              <div className="brand-subtitle">Карта остановок Риги · {gtfsMetadata.importedAt ? 'официальные GTFS' : 'демо-данные'}</div>
+              <div className="brand-title"><span className="brand-mark">R</span> Riga Transit</div>
+              <div className="brand-subtitle">ГОРОДСКОЙ ТРАНСПОРТ · RĪGA</div>
             </div>
-            <div className="user-chip">{user?.first_name ? `Привет, ${user.first_name}` : 'RĪGA'}</div>
+            <div className="user-chip">{user?.first_name ? `Привет, ${user.first_name}` : `${activeStops.length.toLocaleString('ru-RU')} остановки`}</div>
           </div>
           <div className="search-wrap">
-            <span className="search-icon">⌕</span>
+            <span className="search-icon" aria-hidden="true">⌕</span>
             <input
               value={search}
               onChange={event => { setSearch(event.target.value); setSearchOpen(true); }}
@@ -322,7 +334,7 @@ function App() {
                 if (event.key === 'Enter' && matchingStops[0]) selectStop(matchingStops[0]);
                 if (event.key === 'Escape') setSearchOpen(false);
               }}
-              placeholder="Найти остановку или район"
+              placeholder="Остановка или маршрут"
               aria-label="Поиск остановки"
             />
             {search && <button className="clear-search" onClick={() => { setSearch(''); setSearchOpen(true); }} aria-label="Очистить поиск">×</button>}
@@ -345,6 +357,7 @@ function App() {
       </section>
 
       <div className="map-actions">
+        <MapZoomControl />
         <button className="map-action gps-button" onClick={locateMe} disabled={gpsState === 'loading'}>
           <span>{gpsState === 'loading' ? '…' : '◎'}</span>
           {gpsState === 'loading' ? 'Определяем…' : 'Где я'}
@@ -420,7 +433,7 @@ function App() {
               </div>
             </div>
           )}
-          <div className="data-note">{gtfsMetadata.importedAt ? `Официальные координаты Rīgas satiksme · GTFS ${gtfsMetadata.importedAt}.` : 'Официальный каталог остановок пока недоступен. Демонстрационные точки отключены.'}</div>
+          <div className="data-note"><span className="data-check">✓</span> Официальные данные Rīgas satiksme · {gtfsMetadata.importedAt}</div>
         </section>
       )}
 
