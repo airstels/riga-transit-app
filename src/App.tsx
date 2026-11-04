@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { stops, Stop } from './data/stops';
 
@@ -26,6 +26,8 @@ interface Report {
   time: string;
   user?: string;
 }
+
+const RIGA_CENTER: [number, number] = [56.9496, 24.1052];
 
 const REPORT_TYPES = [
   { id: 'check', label: '🚨 Проверка', color: 'bg-red-500' },
@@ -65,11 +67,26 @@ export default function App() {
     }
 
     // Загружаем сохранённые сообщения
-    const saved = localStorage.getItem('riga-reports');
-    if (saved) {
-      try {
-        setReports(JSON.parse(saved));
-      } catch (e) {}
+    try {
+      const saved = localStorage.getItem('riga-reports');
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const validReports = parsed.filter((item): item is Report =>
+            item !== null &&
+            typeof item === 'object' &&
+            typeof item.id === 'string' &&
+            typeof item.stopId === 'string' &&
+            typeof item.type === 'string' &&
+            typeof item.text === 'string' &&
+            typeof item.time === 'string' &&
+            (item.user === undefined || typeof item.user === 'string')
+          );
+          setReports(validReports);
+        }
+      }
+    } catch (error) {
+      console.warn('Не удалось загрузить локальные сообщения:', error);
     }
   }, []);
 
@@ -110,7 +127,7 @@ export default function App() {
     <div className="h-full w-full relative bg-telegram-bg text-white">
       {/* Карта */}
       <MapContainer
-        center={[56.9496, 24.1052]}
+        center={RIGA_CENTER}
         zoom={13}
         className="h-full w-full z-0"
         zoomControl={false}
@@ -119,7 +136,7 @@ export default function App() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
-        <ChangeView center={[56.9496, 24.1052]} />
+        <ChangeView center={RIGA_CENTER} />
 
         {stops.map(stop => (
           <Marker
