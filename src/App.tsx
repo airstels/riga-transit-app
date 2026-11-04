@@ -21,7 +21,8 @@ interface Coordinates { lat: number; lon: number; accuracy?: number }
 type TimetableEntry = [string, string, string, string, string, string, string];
 interface CalendarService { service_id: string; monday: string; tuesday: string; wednesday: string; thursday: string; friday: string; saturday: string; sunday: string; start_date: string; end_date: string }
 interface CalendarException { service_id: string; date: string; exception_type: string }
-interface DepartureGroup { key: string; route: string; routeName: string; routeType: string; headsign: string; departures: Date[] }
+interface DepartureGroup { key: string; route: string; routeName: string; routeType: string; headsign: string; directionId: string; departures: Date[] }
+interface RoutePattern { route: string; routeName: string; routeType: string; headsign: string; directionId: string; stops: { stopId: string; sequence: number }[] }
 let timetableIndexCache: Record<string, number> | null = null;
 const timetableShardCache = new Map<number, Record<string, TimetableEntry[]>>();
 
@@ -52,7 +53,7 @@ function buildUpcomingDepartures(entries: TimetableEntry[], calendar: CalendarSe
       const departure = new Date(serviceDate.getTime() + (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000);
       if (departure.getTime() <= now || departure.getTime() > end) continue;
       const key = `${route}|${headsign}|${directionId}`;
-      const group = groups.get(key) ?? { key, route, routeName, routeType, headsign, departures: [] };
+      const group = groups.get(key) ?? { key, route, routeName, routeType, headsign, directionId, departures: [] };
       group.departures.push(departure);
       groups.set(key, group);
     }
@@ -311,6 +312,9 @@ function App() {
   const [expandedScheduleRoutes, setExpandedScheduleRoutes] = useState<string[]>([]);
   const [scheduleViewOpen, setScheduleViewOpen] = useState(false);
   const [scheduleDateOffset, setScheduleDateOffset] = useState(0);
+  const [routePatterns, setRoutePatterns] = useState<RoutePattern[] | null>(null);
+  const [routePatternsStatus, setRoutePatternsStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [selectedRouteDetail, setSelectedRouteDetail] = useState<DepartureGroup | null>(null);
   const [activeTab, setActiveTab] = useState<'map' | 'favorites'>('map');
   const [showStopMarkers, setShowStopMarkers] = useState(true);
   const [showNearbyPanel, setShowNearbyPanel] = useState(true);
@@ -365,6 +369,22 @@ function App() {
     void load();
     return () => { cancelled = true; };
   }, [selectedStop?.id]);
+
+  useEffect(() => {
+    if (!selectedRouteDetail || routePatterns) return;
+    let cancelled = false;
+    setRoutePatternsStatus('loading');
+    fetch('/data/gtfs/route-patterns.json')
+      .then(response => { if (!response.ok) throw new Error('Route patterns unavailable'); return response.json() as Promise<RoutePattern[]>; })
+      .then(patterns => {
+        if (!cancelled) { setRoutePatterns(patterns); setRoutePatternsStatus('ready'); }
+      })
+      .catch(error => {
+        console.warn('Не удалось загрузить последовательность остановок маршрута', error);
+        if (!cancelled) setRoutePatternsStatus('error');
+      });
+    return () => { cancelled = true; };
+  }, [selectedRouteDetail?.key, routePatterns]);
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -748,7 +768,7 @@ function App() {
                 {scheduleViewOpen && <div className="full-schedule-view">
                   <div className="full-schedule-toolbar">
                     <div><strong>Полное расписание</strong><small>{selectedStop.name} · все отправления</small></div>
-                    <button onClick={() => setScheduleViewOpen(false)} aria-label="Закрыть полное расписание">×</button>
+                    <button onClick={() => { setScheduleViewOpen(false); setSelectedRouteDetail(null); }} aria-label="Закрыть полное расписание">×</button>
                   </div>
                   {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем полное расписание…</div>}
                   {scheduleStatus === 'error' && <div className="schedule-state">Не удалось загрузить расписание. Проверьте соединение и попробуйте снова.</div>}
@@ -760,12 +780,39 @@ function App() {
                     <span>{selectedScheduleDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', weekday: 'short' })}</span>
                   </div>
                   {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleFullDayDepartures.length === 0 && <div className="schedule-state">На выбранную дату отправлений не найдено.</div>}
-                  {visibleFullDayDepartures.map(group => <article className="full-route-group" key={group.key}>
-                    <div className="full-route-heading">
+                  {selectedRouteDetail ? (
+                    <section className="route-detail-view">
+                      <button className="route-detail-back" onClick={() => setSelectedRouteDetail(null)}>← Ко всем маршрутам</button>
+                      <div className="route-detail-title">
+                        <span className={'schedule-vehicle-icon type-' + selectedRouteDetail.routeType}>{transportIcon(selectedRouteDetail.routeType)}</span>
+                        <span className="schedule-route-number">{selectedRouteDetail.route}</span>
+                        <span><strong>{selectedRouteDetail.headsign || selectedRouteDetail.routeName}</strong><small>{transportType(selectedRouteDetail.routeType)} · {selectedRouteDetail.headsign || 'Направление'}</small></span>
+                      </div>
+                      <div className="route-detail-caption">ОСТАНОВКИ ПО ХОДУ МАРШРУТА</div>
+                      {routePatternsStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем маршрут и остановки…</div>}
+                      {routePatternsStatus === 'error' && <div className="schedule-state">Не удалось загрузить схему маршрута. Попробуйте открыть её ещё раз.</div>}
+                      {routePatternsStatus === 'ready' && (() => {
+                        const pattern = routePatterns?.find(item => item.route === selectedRouteDetail.route && item.headsign === selectedRouteDetail.headsign && item.directionId === selectedRouteDetail.directionId);
+                        if (!pattern) return <div className="schedule-state">Для этого направления схема остановок в опубликованных данных не найдена.</div>;
+                        return <ol className="route-stop-list">
+                          {pattern.stops.map((item, index) => {
+                            const stop = activeStops.find(candidate => candidate.id === item.stopId);
+                            const isCurrent = item.stopId === selectedStop.id;
+                            return <li className={isCurrent ? 'current' : ''} key={item.stopId + '-' + item.sequence}>
+                              <span className="route-stop-marker">{index + 1}</span>
+                              <span className="route-stop-name">{stop?.name || 'Остановка ' + item.stopId}{isCurrent && <small>Вы здесь</small>}</span>
+                            </li>;
+                          })}
+                        </ol>;
+                      })()}
+                    </section>
+                  ) : visibleFullDayDepartures.map(group => <article className="full-route-group" key={group.key}>
+                    <button className="full-route-heading route-open-button" onClick={() => setSelectedRouteDetail(group)} aria-label={'Открыть маршрут ' + group.route + ', ' + group.headsign}>
                       <span className={'schedule-vehicle-icon type-' + group.routeType}>{transportIcon(group.routeType)}</span>
                       <span className="schedule-route-number">{group.route}</span>
                       <span className="full-route-copy"><strong>{group.headsign || group.routeName || 'Направление не указано'}</strong><small>{transportType(group.routeType)} · {group.departures.length} рейсов</small></span>
-                    </div>
+                      <span className="route-open-chevron">›</span>
+                    </button>
                     <div className="full-departure-list">
                       {group.departures.map(departure => {
                         const passed = departure.getTime() < scheduleClock;
