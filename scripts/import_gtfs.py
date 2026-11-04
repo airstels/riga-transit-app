@@ -153,6 +153,64 @@ def build_timetable_data(tables):
     return index, shards
 
 
+
+def build_route_patterns(tables):
+    """Build deduplicated route/direction stop sequences for on-demand route details."""
+    route_lookup = {}
+    for route in tables.get("routes", []):
+        route_id = route.get("route_id", "").strip()
+        if not route_id:
+            continue
+        route_lookup[route_id] = {
+            "route": route.get("route_short_name", "").strip() or route_id,
+            "routeName": route.get("route_long_name", "").strip(),
+            "routeType": route.get("route_type", "").strip(),
+        }
+
+    trip_lookup = {}
+    for trip in tables.get("trips", []):
+        trip_id = trip.get("trip_id", "").strip()
+        route = route_lookup.get(trip.get("route_id", "").strip())
+        if not trip_id or not route:
+            continue
+        trip_lookup[trip_id] = {
+            **route,
+            "headsign": trip.get("trip_headsign", "").strip(),
+            "directionId": trip.get("direction_id", "").strip(),
+        }
+
+    trip_stops = {}
+    for row in tables.get("stop_times", []):
+        trip_id = row.get("trip_id", "").strip()
+        stop_id = row.get("stop_id", "").strip()
+        if not trip_id or not stop_id or trip_id not in trip_lookup:
+            continue
+        try:
+            sequence = int(row.get("stop_sequence", "0") or 0)
+        except ValueError:
+            sequence = 0
+        trip_stops.setdefault(trip_id, []).append({"stopId": stop_id, "sequence": sequence})
+
+    patterns = {}
+    for trip_id, stops in trip_stops.items():
+        meta = trip_lookup[trip_id]
+        stops.sort(key=lambda item: item["sequence"])
+        if not stops:
+            continue
+        key = (meta["route"], meta["headsign"], meta["directionId"])
+        pattern_key = tuple(item["stopId"] for item in stops)
+        bucket = patterns.setdefault(key, {})
+        bucket.setdefault(pattern_key, {
+            **meta,
+            "stops": stops,
+        })
+
+    output = []
+    for variants in patterns.values():
+        output.extend(variants.values())
+    output.sort(key=lambda item: (item["route"], item["directionId"], item["headsign"]))
+    return output
+
 def write_outputs(stops, metadata, tables):
     PUBLIC_DATA.mkdir(parents=True, exist_ok=True)
     (PUBLIC_DATA / "stops.json").write_text(json.dumps(stops, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
@@ -161,6 +219,8 @@ def write_outputs(stops, metadata, tables):
         (PUBLIC_DATA / f"{name}.json").write_text(json.dumps(rows, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
 
     index, shards = build_timetable_data(tables)
+    route_patterns = build_route_patterns(tables)
+    (PUBLIC_DATA / "route-patterns.json").write_text(json.dumps(route_patterns, ensure_ascii=False, separators=(",", ":")) + "\\n", encoding="utf-8")
     timetable_dir = PUBLIC_DATA / "timetables"
     if timetable_dir.exists():
         shutil.rmtree(timetable_dir)
