@@ -86,7 +86,7 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   calendarLoading: { ru: 'Проверяем дни и календарь движения…', lv: 'Pārbauda kustības kalendāru…', en: 'Checking service calendar…' },
   noTodayTrips: { ru: 'На выбранную дату отправлений не найдено.', lv: 'Izvēlētajā datumā reisi nav atrasti.', en: 'No departures found for the selected date.' },
   favoritesEmpty: { ru: 'Пока нет избранных остановок. Открой карточку остановки и нажми ☆.', lv: 'Izlasē vēl nav pieturu. Atver pieturas kartīti un nospied ☆.', en: 'No favorite stops yet. Open a stop card and tap ☆.' },
-  stopSingular: { ru: 'Остановка общественного транспорта', lv: 'Sabiedriskā transporta pietura', en: 'Public transport stop' },
+  stopSingular: { ru: t('stopSingular'), lv: 'Sabiedriskā transporta pietura', en: 'Public transport stop' },
 };
 
 type ReportType = 'check' | 'crowded' | 'delay' | 'empty' | 'other';
@@ -200,7 +200,7 @@ function departureDayLabel(date: Date, now: number): string {
 }
 
 function formatDeparture(date: Date, now: number): string {
-  const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  const time = date.toLocaleTimeString(localeCode, { hour: '2-digit', minute: '2-digit' });
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
   if (date.toDateString() === tomorrow.toDateString()) return `${time} · завтра`;
@@ -405,6 +405,11 @@ function App() {
   const [showStopMarkers, setShowStopMarkers] = useState(true);
   const [showNearbyPanel, setShowNearbyPanel] = useState(true);
   const [mapMuted, setMapMuted] = useState(false);
+
+  useEffect(() => {
+    try { localStorage.setItem('riga-language', language); } catch (error) { console.warn('Could not save language preference', error); }
+    document.documentElement.lang = language;
+  }, [language]);
 
   useEffect(() => {
     let cancelled = false;
@@ -679,7 +684,7 @@ function App() {
               <div className="brand-title"><span className="brand-mark">R</span> Riga Transit</div>
               <div className="brand-subtitle">ГОРОДСКОЙ ТРАНСПОРТ · RĪGA</div>
             </div>
-            <button className="user-chip profile-trigger" onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }} aria-label="Открыть профиль">{user?.photo_url ? <img className="profile-trigger-photo" src={user.photo_url} alt="" /> : <span className="profile-trigger-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase("ru-RU")}</span>}<span>Профиль</span><span className="profile-trigger-chevron">↗</span></button>
+            <button className="user-chip profile-trigger" onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }} aria-label={t('profile')}>{user?.photo_url ? <img className="profile-trigger-photo" src={user.photo_url} alt="" /> : <span className="profile-trigger-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase("ru-RU")}</span>}<span>{t('profile')}</span><span className="profile-trigger-chevron">↗</span></button>
           </div>
           <div className="search-wrap">
             <span className="search-icon" aria-hidden="true">⌕</span>
@@ -691,10 +696,10 @@ function App() {
                 if (event.key === 'Enter' && matchingStops[0]) selectStop(matchingStops[0]);
                 if (event.key === 'Escape') setSearchOpen(false);
               }}
-              placeholder="Остановка или маршрут"
-              aria-label="Поиск остановки"
+              placeholder={t('searchPlaceholder')}
+              aria-label={t('searchStop')}
             />
-            {search && <button className="clear-search" onClick={() => { setSearch(''); setSearchOpen(true); }} aria-label="Очистить поиск">×</button>}
+            {search && <button className="clear-search" onClick={() => { setSearch(''); setSearchOpen(true); }} aria-label={t('clearSearch')}>×</button>}
           </div>
           {searchOpen && matchingStops.length > 0 && (
             <div className="search-results">
@@ -712,11 +717,11 @@ function App() {
               {favoriteIds.length > 0 && <div className="quick-group">
                 <div className="quick-heading"><span>ИЗБРАННОЕ</span><span>★ {favoriteIds.length}</span></div>
                 {favoriteIds.slice(0, 5).map(id => activeStops.find(stop => stop.id === id)).filter((stop): stop is Stop => Boolean(stop)).map(stop => (
-                  <button key={stop.id} className="quick-row" onClick={() => selectStop(stop)}><span className="quick-star">★</span><span className="quick-name">{stop.name}</span><small>{stop.routes?.slice(0, 3).join(' · ') || 'Остановка'}</small></button>
+                  <button key={stop.id} className="quick-row" onClick={() => selectStop(stop)}><span className="quick-star">★</span><span className="quick-name">{stop.name}</span><small>{stop.routes?.slice(0, 3).join(' · ') || t('stopSingular')}</small></button>
                 ))}
               </div>}
               {recentIds.length > 0 && <div className="quick-group">
-                <div className="quick-heading"><span>НЕДАВНИЕ</span><span>ПОСЛЕДНИЕ</span></div>
+                <div className="quick-heading"><span>{t('recentLabel')}</span><span>{t('latest')}</span></div>
                 {recentIds.slice(0, 4).map(id => activeStops.find(stop => stop.id === id)).filter((stop): stop is Stop => Boolean(stop)).map(stop => (
                   <button key={stop.id} className="quick-row" onClick={() => selectStop(stop)}><span className="quick-recent">↺</span><span className="quick-name">{stop.name}</span><small>{stop.routes?.slice(0, 3).join(' · ') || 'Остановка'}</small></button>
                 ))}
@@ -785,7 +790,7 @@ function App() {
         <div className="map-actions">
           <button className="map-action gps-button" onClick={locateMe} disabled={gpsState === 'loading'}>
             <span>{gpsState === 'loading' ? '…' : '◎'}</span>
-            {gpsState === 'loading' ? 'Определяем…' : 'Где я'}
+            {gpsState === 'loading' ? t('locating') : t('whereAmI')}
           </button>
         </div>
       )}
@@ -794,7 +799,7 @@ function App() {
 
       {activeTab === 'map' && showNearbyPanel && position && nearestStops.length > 0 && !selectedStop && (
         <aside className="nearest-panel glass">
-          <div className="panel-eyebrow">РЯДОМ С ВАМИ</div>
+          <div className="panel-eyebrow">{t('nearbyLabel')}</div>
           {nearestStops.slice(0, 3).map(({ stop, distance }, index) => (
             <button key={stop.id} className="nearest-row" onClick={() => selectStop(stop)}>
               <span className="nearest-index">{index + 1}</span><span className="nearest-name">{stop.name}</span><span className="nearest-distance">{formatDistance(distance)}</span>
@@ -818,19 +823,19 @@ function App() {
               <div className="schedule-panel">
                 <div className="schedule-panel-top">
                   <div>
-                    <div className="schedule-heading"><span>ОТПРАВЛЕНИЯ</span><small>ОФИЦИАЛЬНОЕ РАСПИСАНИЕ</small></div>
-                    <div className="schedule-subtitle">Ближайшие рейсы с этой остановки</div>
+                    <div className="schedule-heading"><span>{t('departures')}</span><small>{t('officialSchedule')}</small></div>
+                    <div className="schedule-subtitle">{t('nearestDepartures')}</div>
                   </div>
                   <span className="schedule-live-dot" aria-label="Плановое расписание" />
                 </div>
                 <div className="schedule-filter" role="group" aria-label="Фильтр транспорта">
-                  {[{id:'all',label:'Все'}, {id:'3',label:'Автобусы'}, {id:'11',label:'Троллейбусы'}, {id:'0',label:'Трамваи'}].map(filter => (
+                  {[{id:'all',label:t('all')}, {id:'3',label:t('buses')}, {id:'11',label:t('trolleybuses')}, {id:'0',label:t('trams')}].map(filter => (
                     <button key={filter.id} className={scheduleTransportFilter === filter.id ? 'active' : ''} onClick={() => setScheduleTransportFilter(filter.id)}>{filter.label}</button>
                   ))}
                 </div>
                 {!scheduleViewOpen && <div className="schedule-open-row">
-                  <div><strong>Расписание на весь день</strong><small>Все рейсы и направления</small></div>
-                  <button onClick={() => { setScheduleDateOffset(0); setScheduleSearch(''); setSelectedRouteDetail(null); setScheduleViewOpen(true); }}>Открыть <span>↗</span></button>
+                  <div><strong>{t('fullDay')}</strong><small>{t('allTrips')}</small></div>
+                  <button onClick={() => { setScheduleDateOffset(0); setScheduleSearch(''); setSelectedRouteDetail(null); setScheduleViewOpen(true); }}>{t('open')} <span>↗</span></button>
                 </div>}
                 {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем расписание остановки…</div>}
                 {scheduleStatus === 'error' && <div className="schedule-state">Не удалось загрузить расписание. Проверьте соединение и откройте остановку ещё раз.</div>}
@@ -850,7 +855,7 @@ function App() {
                         <span className="schedule-route-number">{group.route}</span>
                         <span className="schedule-route-copy"><strong>{group.headsign || group.routeName || 'Направление не указано'}</strong><small>{transportType(group.routeType)}{group.routeName ? ' · ' + group.routeName : ''}</small></span>
                         <span className="schedule-next">
-                          <strong>{first ? first.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '—'}</strong>
+                          <strong>{first ? first.toLocaleTimeString(localeCode, {hour:'2-digit', minute:'2-digit'}) : '—'}</strong>
                           <small>{first ? departureDayLabel(first, scheduleClock) + ' · ' : ''}{minutes < 1 ? 'сейчас' : minutes < 60 ? 'через ' + minutes + ' мин' : 'через ' + Math.floor(minutes / 60) + ' ч ' + (minutes % 60) + ' мин'}</small>
                         </span>
                       </div>
@@ -872,7 +877,7 @@ function App() {
 
                 {scheduleViewOpen && <div className="full-schedule-view">
                   <div className="full-schedule-toolbar">
-                    <div><strong>Полное расписание</strong><small>{selectedStop.name} · все отправления</small></div>
+                    <div><strong>{t('fullSchedule')}</strong><small>{selectedStop.name} · {t('allDepartures')}</small></div>
                     <button onClick={() => { setScheduleViewOpen(false); setSelectedRouteDetail(null); setScheduleSearch(''); }} aria-label="Закрыть полное расписание">×</button>
                   </div>
                   {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем полное расписание…</div>}
@@ -881,25 +886,25 @@ function App() {
                   {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">Календарь движения временно недоступен.</div>}
                   <label className="schedule-search">
                     <span>⌕</span>
-                    <input value={scheduleSearch} onChange={event => setScheduleSearch(event.target.value)} placeholder="Номер маршрута или направление" aria-label="Поиск по расписанию" />
+                    <input value={scheduleSearch} onChange={event => setScheduleSearch(event.target.value)} placeholder={t('routeSearch')} aria-label="Поиск по расписанию" />
                     {scheduleSearch && <button onClick={() => setScheduleSearch('')} aria-label="Очистить поиск">×</button>}
                   </label>
                   <div className="schedule-results-count">{visibleFullDayDepartures.length} {visibleFullDayDepartures.length === 1 ? 'направление' : 'направлений'} · {visibleFullDayDepartures.reduce((sum, group) => sum + group.departures.length, 0)} отправлений</div>
                   <div className="schedule-date-tabs" role="group" aria-label="Дата расписания">
-                    <button className={scheduleDateOffset === 0 ? 'active' : ''} onClick={() => setScheduleDateOffset(0)}>Сегодня</button>
-                    <button className={scheduleDateOffset === 1 ? 'active' : ''} onClick={() => setScheduleDateOffset(1)}>Завтра</button>
-                    <span>{selectedScheduleDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', weekday: 'short' })}</span>
+                    <button className={scheduleDateOffset === 0 ? 'active' : ''} onClick={() => setScheduleDateOffset(0)}>{t('today')}</button>
+                    <button className={scheduleDateOffset === 1 ? 'active' : ''} onClick={() => setScheduleDateOffset(1)}>{t('tomorrow')}</button>
+                    <span>{selectedScheduleDate.toLocaleDateString(localeCode, { day: 'numeric', month: 'long', weekday: 'short' })}</span>
                   </div>
                   {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleFullDayDepartures.length === 0 && <div className="schedule-state">На выбранную дату отправлений не найдено.</div>}
                   {selectedRouteDetail ? (
                     <section className="route-detail-view">
-                      <button className="route-detail-back" onClick={() => setSelectedRouteDetail(null)}>← Ко всем маршрутам</button>
+                      <button className="route-detail-back" onClick={() => setSelectedRouteDetail(null)}>{t('allRoutes')}</button>
                       <div className="route-detail-title">
                         <span className={'schedule-vehicle-icon type-' + selectedRouteDetail.routeType}>{transportIcon(selectedRouteDetail.routeType)}</span>
                         <span className="schedule-route-number">{selectedRouteDetail.route}</span>
                         <span><strong>{selectedRouteDetail.headsign || selectedRouteDetail.routeName}</strong><small>{transportType(selectedRouteDetail.routeType)} · {selectedRouteDetail.headsign || 'Направление'}</small></span>
                       </div>
-                      <div className="route-detail-caption">ОСТАНОВКИ ПО ХОДУ МАРШРУТА</div>
+                      <div className="route-detail-caption">{t('routeStops')}</div>
                       {routePatternsStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />Загружаем маршрут и остановки…</div>}
                       {routePatternsStatus === 'error' && <div className="schedule-state">Не удалось загрузить схему маршрута. Попробуйте открыть её ещё раз.</div>}
                       {routePatternsStatus === 'ready' && (() => {
@@ -911,7 +916,7 @@ function App() {
                             const isCurrent = item.stopId === selectedStop.id;
                             return <li className={isCurrent ? 'current' : ''} key={item.stopId + '-' + item.sequence}>
                               <span className="route-stop-marker">{index + 1}</span>
-                              <span className="route-stop-name">{stop?.name || 'Остановка ' + item.stopId}{isCurrent && <small>Вы здесь</small>}</span>
+                              <span className="route-stop-name">{stop?.name || 'Остановка ' + item.stopId}{isCurrent && <small>{t('youAreHere')}</small>}</span>
                             </li>;
                           })}
                         </ol>;
@@ -929,7 +934,7 @@ function App() {
                         const passed = departure.getTime() < scheduleClock;
                         const isNext = !passed && !group.departures.some(item => item.getTime() >= scheduleClock && item.getTime() < departure.getTime());
                         return <div className={passed ? 'full-departure passed' : isNext ? 'full-departure next' : 'full-departure'} key={departure.toISOString()}>
-                          <strong>{departure.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</strong>
+                          <strong>{departure.toLocaleTimeString(localeCode, { hour: '2-digit', minute: '2-digit' })}</strong>
                           <small>{passed ? 'Прошёл' : isNext ? 'Следующий рейс' : 'По расписанию'}</small>
                         </div>;
                       })}
@@ -984,8 +989,8 @@ function App() {
 
       {activeTab === 'favorites' && !selectedStop && (
         <aside className="favorites-panel glass">
-          <div className="favorites-panel-heading"><span>МОИ ОСТАНОВКИ</span><small>{favoriteIds.length} В ИЗБРАННОМ</small></div>
-          {favoriteIds.length === 0 ? <div className="favorites-empty">Пока нет избранных остановок. Открой карточку остановки и нажми ☆.</div> :
+          <div className="favorites-panel-heading"><span>{t('myStops')}</span><small>{favoriteIds.length} · {t('favorites').toLocaleUpperCase(localeCode)}</small></div>
+          {favoriteIds.length === 0 ? <div className="favorites-empty">{t('favoritesEmpty')}</div> :
             favoriteIds.map(id => activeStops.find(stop => stop.id === id)).filter((stop): stop is Stop => Boolean(stop)).map(stop => (
               <button className="favorites-row" key={stop.id} onClick={() => { setActiveTab('map'); selectStop(stop); }}>
                 <span className="favorites-star">★</span><span className="favorites-name">{stop.name}</span><small>{stop.routes?.slice(0, 4).join(' · ') || 'Остановка'}</small><b>↗</b>
@@ -994,10 +999,10 @@ function App() {
         </aside>
       )}
 
-      <nav className="bottom-nav" aria-label="Основная навигация">
-        <button className={activeTab === 'map' ? 'active' : ''} onClick={() => { setActiveTab('map'); setSelectedStop(null); setSearchOpen(false); }}><span>⌖</span><small>Карта</small></button>
-        <button className={activeTab === 'favorites' ? 'active' : ''} onClick={() => { setActiveTab('favorites'); setSelectedStop(null); setSearchOpen(false); }}><span>☆</span><small>Избранное</small></button>
-        <button onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }}><span>◉</span><small>Профиль</small></button>
+      <nav className="bottom-nav" aria-label={t('mapTab')}>
+        <button className={activeTab === 'map' ? 'active' : ''} onClick={() => { setActiveTab('map'); setSelectedStop(null); setSearchOpen(false); }}><span>⌖</span><small>{t('mapTab')}</small></button>
+        <button className={activeTab === 'favorites' ? 'active' : ''} onClick={() => { setActiveTab('favorites'); setSelectedStop(null); setSearchOpen(false); }}><span>☆</span><small>{t('favoritesTab')}</small></button>
+        <button onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }}><span>◉</span><small>{t('profile')}</small></button>
       </nav>
 
       
