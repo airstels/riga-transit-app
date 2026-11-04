@@ -50,3 +50,10 @@ The agency publishes static public-transport schedules in GTFS format as open da
 The importer reads \`stops.txt\`, \`routes.txt\`, \`trips.txt\`, and \`stop_times.txt\`; it validates coordinates, deduplicates stop IDs and associates published route names with each stop. It uses only Python's standard library.
 
 **Scope note:** this first GTFS import enables official stop coordinates and route labels. It does not yet implement trip planning, transfers, live vehicle positions or arrival predictions. Those require a schedule-aware routing engine and, for live data, a supported real-time feed.
+
+### Проверки
+
+```bash
+npm run build
+npm run test:gtfs
+```
