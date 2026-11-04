@@ -921,3 +921,28 @@ button:disabled { opacity: .65; cursor: wait; }
 .stop-sheet.schedule-open .full-departure strong{font-size:14px}
 .stop-sheet.schedule-open .reports-heading,.stop-sheet.schedule-open .reports-list,.stop-sheet.schedule-open>.primary-button,.stop-sheet.schedule-open>.report-form,.stop-sheet.schedule-open .data-note{display:none}
 @media(min-width:700px){.stop-sheet.schedule-open{width:min(760px,calc(100vw - 48px));height:min(900px,calc(100dvh - 48px));max-height:calc(100dvh - 48px);inset:24px;margin:auto;border:1px solid rgba(218,183,120,.24);border-radius:24px;padding:24px}.stop-sheet.schedule-open .sheet-actions{top:40px;right:40px}}
+
+
+/* Route details: a readable ordered stop list with the selected stop highlighted. */
+.route-open-button { width:100%; border:0; color:inherit; background:transparent; text-align:left; cursor:pointer; }
+.route-open-button:focus-visible,.route-detail-back:focus-visible { outline:2px solid rgba(231,201,147,.8); outline-offset:3px; }
+.route-open-chevron { flex:0 0 auto; color:#d8bc87; font-size:24px; line-height:1; }
+.route-detail-view { margin-top:8px; padding:14px; border:1px solid rgba(218,183,120,.2); border-radius:16px; background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(0,0,0,.12)); }
+.route-detail-back { min-height:36px; margin:0 0 14px; padding:0 11px; border:1px solid rgba(218,183,120,.25); border-radius:10px; color:#e4c995; background:rgba(218,183,120,.08); font-size:11px; font-weight:700; }
+.route-detail-title { display:flex; align-items:center; gap:10px; padding:0 0 14px; border-bottom:1px solid rgba(255,255,255,.075); }
+.route-detail-title > span:last-child { display:flex; min-width:0; flex-direction:column; gap:4px; }
+.route-detail-title strong { overflow:hidden; color:#f1f3f4; font-size:14px; text-overflow:ellipsis; white-space:nowrap; }
+.route-detail-title small { color:#93a0a9; font-size:10px; }
+.route-detail-caption { margin:16px 0 10px; color:#c8ae7c; font-size:9px; font-weight:850; letter-spacing:1.15px; }
+.route-stop-list { position:relative; display:flex; flex-direction:column; margin:0; padding:0; list-style:none; }
+.route-stop-list::before { position:absolute; top:15px; bottom:15px; left:14px; width:1px; background:linear-gradient(rgba(218,183,120,.55),rgba(218,183,120,.12)); content:""; }
+.route-stop-list li { position:relative; display:flex; align-items:center; gap:12px; min-height:48px; padding:5px 8px; border-radius:10px; }
+.route-stop-list li.current { border:1px solid rgba(218,183,120,.3); background:rgba(218,183,120,.09); }
+.route-stop-marker { z-index:1; display:grid; width:29px; height:29px; flex:0 0 29px; place-items:center; border:1px solid rgba(218,183,120,.24); border-radius:50%; color:#c7b18b; background:#141c24; font-size:10px; font-weight:800; font-variant-numeric:tabular-nums; }
+.route-stop-list li.current .route-stop-marker { border-color:rgba(232,205,157,.75); color:#171b20; background:linear-gradient(145deg,#f0d9aa,#c9a96e); }
+.route-stop-name { display:flex; min-width:0; flex:1; flex-direction:column; gap:3px; color:#e1e6e9; font-size:12px; font-weight:600; line-height:1.35; }
+.route-stop-name small { color:#d7b978; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; }
+@media(max-width:380px) {
+  .route-detail-view { padding:11px; }
+  .route-stop-list li { min-height:44px; }
+}
