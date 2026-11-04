@@ -733,41 +733,50 @@ function App() {
         <div className="profile-backdrop" onClick={() => setShowProfile(false)}>
           <section className="profile-panel glass" role="dialog" aria-modal="true" aria-labelledby="profile-title" onClick={event => event.stopPropagation()}>
             <div className="profile-panel-top">
-              <div className="panel-eyebrow">RIGA TRANSIT · ЛИЧНОЕ ПРОСТРАНСТВО</div>
-              <button className="close-sheet" onClick={() => setShowProfile(false)} aria-label="Закрыть профиль">×</button>
+              <div><div className="panel-eyebrow">{t('personalSpace')}</div><span className="profile-kicker">YOUR CITY · YOUR ROUTES</span></div>
+              <button className="close-sheet" onClick={() => setShowProfile(false)} aria-label={t('closeProfile')}>×</button>
             </div>
             <div className="profile-identity">
-              {user?.photo_url ? <img className="profile-avatar profile-avatar-photo" src={user.photo_url} alt="" /> : <div className="profile-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase("ru-RU")}</div>}
+              {user?.photo_url ? <img className="profile-avatar profile-avatar-photo" src={user.photo_url} alt="" /> : <div className="profile-avatar">{(profileName || user?.first_name || "R").slice(0,1).toLocaleUpperCase(localeCode)}</div>}
               <div className="profile-identity-copy">
-                <h2 id="profile-title">{profileName || [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Гость Riga Transit"}</h2>
-                <span className="profile-status"><i /> {user ? "Имя получено из Telegram Mini App" : "Локальный профиль"}</span>
+                <h2 id="profile-title">{profileName || [user?.first_name, user?.last_name].filter(Boolean).join(" ") || t('guest')}</h2>
+                <span className="profile-status"><i /> {user ? t('telegramUser') : t('localProfile')}</span>
+                <small className="profile-device-tag">{user ? 'TELEGRAM MINI APP' : 'RIGA TRANSIT ID'}</small>
               </div>
             </div>
             <div className="profile-name-edit">
-              <label htmlFor="profile-name">Отображаемое имя</label>
+              <label htmlFor="profile-name">{t('displayName')}</label>
               <div className="profile-name-row">
-                <input id="profile-name" value={profileNameDraft} maxLength={32} onChange={event => setProfileNameDraft(event.target.value)} placeholder={user?.first_name || "Как к вам обращаться"} />
-                <button onClick={saveProfileName} disabled={profileNameDraft.trim() === profileName}>Сохранить</button>
+                <input id="profile-name" value={profileNameDraft} maxLength={32} onChange={event => setProfileNameDraft(event.target.value)} placeholder={user?.first_name || t('namePlaceholder')} />
+                <button onClick={saveProfileName} disabled={profileNameDraft.trim() === profileName}>{t('save')}</button>
               </div>
-              <small>Имя видно только в этом приложении на данном устройстве.</small>
+              <small>{t('nameLocal')}</small>
             </div>
-            <div className="profile-section-title">ВАША АКТИВНОСТЬ</div>
+            <div className="profile-section-title">{t('activity')}</div>
             <div className="profile-stats">
-              <div className="profile-stat"><strong>{favoriteIds.length}</strong><span>Избранное</span></div>
-              <div className="profile-stat"><strong>{recentIds.length}</strong><span>Недавние</span></div>
-              <div className="profile-stat"><strong>{reports.length}</strong><span>Наблюдения</span></div>
+              <div className="profile-stat"><strong>{favoriteIds.length}</strong><span>{t('favorites')}</span></div>
+              <div className="profile-stat"><strong>{recentIds.length}</strong><span>{t('recent')}</span></div>
+              <div className="profile-stat"><strong>{reports.length}</strong><span>{t('reports')}</span></div>
             </div>
             <div className="profile-links">
-              <button onClick={openProfileQuickList}><span className="profile-link-icon">★</span><span><strong>Мои остановки</strong><small>Избранное и недавние просмотры</small></span><b>↗</b></button>
-              <button onClick={() => { setShowProfile(false); setPosition(null); setGpsState("idle"); setGpsError(""); }}><span className="profile-link-icon">◎</span><span><strong>Сбросить геолокацию</strong><small>Убрать мою позицию с карты</small></span><b>↗</b></button>
+              <button onClick={openProfileQuickList}><span className="profile-link-icon">★</span><span><strong>{t('myStops')}</strong><small>{t('myStopsHint')}</small></span><b>↗</b></button>
+              <button onClick={() => { setShowProfile(false); setPosition(null); setGpsState("idle"); setGpsError(""); }}><span className="profile-link-icon">◎</span><span><strong>{t('resetLocation')}</strong><small>{t('resetLocationHint')}</small></span><b>↗</b></button>
+              <button onClick={() => { setRecentIds([]); try { localStorage.removeItem(RECENT_KEY); } catch (error) { console.warn('Could not clear recent stops', error); } }} disabled={recentIds.length === 0}><span className="profile-link-icon">↺</span><span><strong>{t('clearRecent')}</strong><small>{t('clearRecentHint')}</small></span><b>×</b></button>
             </div>
-            <div className="profile-section-title">НАСТРОЙКИ КАРТЫ</div>
+            <div className="profile-section-title">{t('language')}</div>
+            <div className="profile-language-card">
+              <div className="profile-language-copy"><strong>{t('languageHint')}</strong><small>Русский · Latviešu · English</small></div>
+              <div className="profile-language-options" role="group" aria-label={t('language')}>
+                {(['ru','lv','en'] as AppLanguage[]).map(code => <button key={code} className={language === code ? 'active' : ''} onClick={() => setLanguage(code)} aria-pressed={language === code}><span>{LANGUAGE_LABELS[code].native}</span><small>{LANGUAGE_LABELS[code].name}</small></button>)}
+              </div>
+            </div>
+            <div className="profile-section-title">{t('mapSettings')}</div>
             <div className="profile-preferences">
-              <label><span><strong>Остановки на карте</strong><small>Показывать маркеры остановок</small></span><input type="checkbox" checked={showStopMarkers} onChange={event => savePreference('riga-show-stops', event.target.checked, setShowStopMarkers)} /></label>
-              <label><span><strong>Ближайшие остановки</strong><small>Показывать список рядом со мной</small></span><input type="checkbox" checked={showNearbyPanel} onChange={event => savePreference('riga-show-nearby', event.target.checked, setShowNearbyPanel)} /></label>
-              <label><span><strong>Приглушённая карта</strong><small>Менее яркая подложка карты</small></span><input type="checkbox" checked={mapMuted} onChange={event => savePreference('riga-map-muted', event.target.checked, setMapMuted)} /></label>
+              <label><span><strong>{t('showStops')}</strong><small>{t('showStopsHint')}</small></span><input type="checkbox" checked={showStopMarkers} onChange={event => savePreference('riga-show-stops', event.target.checked, setShowStopMarkers)} /></label>
+              <label><span><strong>{t('nearby')}</strong><small>{t('nearbyHint')}</small></span><input type="checkbox" checked={showNearbyPanel} onChange={event => savePreference('riga-show-nearby', event.target.checked, setShowNearbyPanel)} /></label>
+              <label><span><strong>{t('mutedMap')}</strong><small>{t('mutedMapHint')}</small></span><input type="checkbox" checked={mapMuted} onChange={event => savePreference('riga-map-muted', event.target.checked, setMapMuted)} /></label>
             </div>
-            <div className="profile-footnote">Данные профиля и избранное хранятся локально. Серверная учётная запись и синхронизация пока не подключены.</div>
+            <div className="profile-footnote"><span>ⓘ</span>{t('localData')}</div>
           </section>
         </div>
       )}
