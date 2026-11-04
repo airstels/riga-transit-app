@@ -6,5 +6,7 @@
   "routeCount": 79,
   "tripCount": 12001,
   "stopTimeCount": 299794,
-  "license": "CC0 1.0"
+  "license": "CC0 1.0",
+  "timetableShardCount": 32,
+  "timetableStopCount": 1643
 }
