@@ -63,6 +63,36 @@ function buildUpcomingDepartures(entries: TimetableEntry[], calendar: CalendarSe
   })).sort((a, b) => (a.departures[0]?.getTime() ?? 0) - (b.departures[0]?.getTime() ?? 0));
 }
 
+
+function buildDeparturesForDate(entries: TimetableEntry[], calendar: CalendarService[], exceptions: CalendarException[], targetDate: Date): DepartureGroup[] {
+  if (!calendar.length && !exceptions.length) return [];
+  const dayStart = new Date(targetDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+  const groups = new Map<string, DepartureGroup>();
+  for (let offset = 0; offset <= 2; offset++) {
+    const serviceDate = new Date(dayStart);
+    serviceDate.setDate(serviceDate.getDate() - offset);
+    for (const entry of entries) {
+      const [time, route, routeName, routeType, serviceId, headsign, directionId] = entry;
+      if (!serviceRunsOn(serviceId, serviceDate, calendar, exceptions)) continue;
+      const parts = time.split(':').map(Number);
+      if (parts.length !== 3 || parts.some(value => !Number.isFinite(value))) continue;
+      const departure = new Date(serviceDate.getTime() + (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000);
+      if (departure < dayStart || departure >= dayEnd) continue;
+      const key = route + '|' + headsign + '|' + directionId;
+      const group = groups.get(key) ?? { key, route, routeName, routeType, headsign, departures: [] };
+      group.departures.push(departure);
+      groups.set(key, group);
+    }
+  }
+  return Array.from(groups.values()).map(group => ({
+    ...group,
+    departures: group.departures.sort((a, b) => a.getTime() - b.getTime()),
+  })).sort((a, b) => (a.departures[0]?.getTime() ?? 0) - (b.departures[0]?.getTime() ?? 0));
+}
+
 function transportType(type: string): string {
   if (type === '0') return 'Трамвай';
   if (type === '11') return 'Троллейбус';
@@ -279,6 +309,8 @@ function App() {
   const [scheduleClock, setScheduleClock] = useState(Date.now());
   const [scheduleTransportFilter, setScheduleTransportFilter] = useState('all');
   const [expandedScheduleRoutes, setExpandedScheduleRoutes] = useState<string[]>([]);
+  const [scheduleViewOpen, setScheduleViewOpen] = useState(false);
+  const [scheduleDateOffset, setScheduleDateOffset] = useState(0);
   const [activeTab, setActiveTab] = useState<'map' | 'favorites'>('map');
   const [showStopMarkers, setShowStopMarkers] = useState(true);
   const [showNearbyPanel, setShowNearbyPanel] = useState(true);
@@ -392,6 +424,20 @@ function App() {
   ), [scheduleEntries, calendarData, scheduleClock]);
 
   const visibleDepartures = useMemo(() => scheduleTransportFilter === 'all' ? upcomingDepartures : upcomingDepartures.filter(group => group.routeType === scheduleTransportFilter), [upcomingDepartures, scheduleTransportFilter]);
+  const selectedScheduleDate = useMemo(() => {
+    const date = new Date(scheduleClock);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + scheduleDateOffset);
+    return date;
+  }, [scheduleClock, scheduleDateOffset]);
+  const fullDayDepartures = useMemo(() => buildDeparturesForDate(
+    scheduleEntries, calendarData.calendar, calendarData.exceptions, selectedScheduleDate,
+  ), [scheduleEntries, calendarData, selectedScheduleDate]);
+  const visibleFullDayDepartures = useMemo(() => scheduleTransportFilter === 'all'
+    ? fullDayDepartures
+    : fullDayDepartures.filter(group => group.routeType === scheduleTransportFilter),
+  [fullDayDepartures, scheduleTransportFilter]);
+
 
   const selectedReports = useMemo(() => selectedStop
     ? reports.filter(report => report.stopId === selectedStop.id).sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8)
@@ -441,6 +487,9 @@ function App() {
     catch (error) { console.warn('Не удалось сохранить историю поиска', error); }
     setSelectedStop(stop);
     setShowAddForm(false);
+    setScheduleViewOpen(false);
+    setScheduleDateOffset(0);
+    setExpandedScheduleRoutes([]);
     setSearch(stop.name);
     setSearchOpen(false);
     setMapTarget({ lat: stop.lat, lon: stop.lon });
@@ -632,7 +681,7 @@ function App() {
       )}
 
       {selectedStop && (
-        <section className="stop-sheet glass" aria-label={`Остановка ${selectedStop.name}`}>
+        <section className={scheduleViewOpen ? "stop-sheet glass schedule-open" : "stop-sheet glass"} aria-label={`Остановка ${selectedStop.name}`}>
           <div className="sheet-handle" />
           <div className="sheet-heading">
             <div>
