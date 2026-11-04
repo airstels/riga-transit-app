@@ -107,14 +107,13 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   routes: { ru: 'Маршруты', lv: 'Maršruti', en: 'Routes' },
   favoriteStops: { ru: 'ИЗБРАННОЕ', lv: 'IZLASE', en: 'FAVORITES' },
   stopShort: { ru: 'Остановка', lv: 'Pietura', en: 'Stop' },
-  directionUnknown: { ru: 'Направление не указано', lv: 'Virziens nav norādīts', en: 'Direction not specified' },
-  now: { ru: 'сейчас', lv: 'tagad', en: 'now' },
+  directionUnknown: { ru: t('directionUnknown'), lv: 'Virziens nav norādīts', en: 'Direction not specified' },
+  now: { ru: t('now'), lv: 'tagad', en: 'now' },
   minutesShort: { ru: 'мин', lv: 'min', en: 'min' },
   hoursShort: { ru: 'ч', lv: 'h', en: 'h' },
-  collapse: { ru: 'Свернуть', lv: 'Sakļaut', en: 'Collapse' },
+  collapse: { ru: t('collapse'), lv: 'Sakļaut', en: 'Collapse' },
   moreTrips: { ru: 'Ещё', lv: 'Vēl', en: 'More' },
   routeSearchLabel: { ru: 'Поиск по расписанию', lv: 'Meklēt kustības sarakstā', en: 'Search timetable' },
-  clearSearch: { ru: 'Очистить поиск', lv: 'Notīrīt meklēšanu', en: 'Clear search' },
   dateLabel: { ru: 'Дата расписания', lv: 'Saraksta datums', en: 'Timetable date' },
   routeOpen: { ru: 'Открыть маршрут', lv: 'Atvērt maršrutu', en: 'Open route' },
   removeFavorite: { ru: 'Убрать из избранного', lv: 'Noņemt no izlases', en: 'Remove from favorites' },
@@ -126,7 +125,7 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   commentPlaceholder: { ru: 'Комментарий до 160 символов (необязательно)', lv: 'Komentārs līdz 160 rakstzīmēm (neobligāti)', en: 'Comment up to 160 characters (optional)' },
   cancel: { ru: 'Отмена', lv: 'Atcelt', en: 'Cancel' },
   publish: { ru: 'Опубликовать', lv: 'Publicēt', en: 'Publish' },
-  anonymous: { ru: 'Аноним', lv: 'Anonīms', en: 'Anonymous' },
+  anonymous: { ru: t('anonymous'), lv: 'Anonīms', en: 'Anonymous' },
   check: { ru: 'Проверка', lv: 'Pārbaude', en: 'Check' },
   crowded: { ru: 'Переполнен', lv: 'Pārpildīts', en: 'Crowded' },
   delay: { ru: 'Задержка', lv: 'Kavēšanās', en: 'Delay' },
@@ -414,10 +413,10 @@ function StopLayer({ stops: mapStops, selectedStop, onSelect }: { stops: Stop[];
 function MapZoomControl() {
   const map = useMap();
   return (
-    <div className="zoom-control" aria-label="Управление масштабом карты">
-      <button onClick={() => map.zoomIn()} aria-label="Приблизить карту">+</button>
+    <div className="zoom-control" aria-label={t('mapZoom')}>
+      <button onClick={() => map.zoomIn()} aria-label={t('zoomIn')}>+</button>
       <span />
-      <button onClick={() => map.zoomOut()} aria-label="Отдалить карту">−</button>
+      <button onClick={() => map.zoomOut()} aria-label={t('zoomOut')}>−</button>
     </div>
   );
 }
@@ -672,7 +671,7 @@ function App() {
   const locateMe = () => {
     if (!navigator.geolocation) {
       setGpsState('error');
-      setGpsError('Браузер не поддерживает геолокацию');
+      setGpsError(t('browserGeo'));
       return;
     }
     setGpsState('loading');
@@ -687,8 +686,8 @@ function App() {
       error => {
         setGpsState('error');
         setGpsError(error.code === error.PERMISSION_DENIED
-          ? 'Разреши доступ к геолокации в настройках браузера'
-          : error.code === error.TIMEOUT ? 'Не удалось определить местоположение вовремя' : 'Местоположение временно недоступно');
+          ? t('allowGeo')
+          : error.code === error.TIMEOUT ? t('geoTimeout') : t('geoUnavailable'));
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 },
     );
@@ -704,7 +703,7 @@ function App() {
       text: reportText.trim().slice(0, 160),
       time: new Date(now).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
       createdAt: now,
-      user: user?.first_name ? [user.first_name, user.last_name].filter(Boolean).join(' ') : 'Аноним',
+      user: user?.first_name ? [user.first_name, user.last_name].filter(Boolean).join(' ') : t('anonymous'),
     };
     persistReports([report, ...reports]);
     setShowAddForm(false);
@@ -739,7 +738,7 @@ function App() {
               <div className="brand-title"><span className="brand-mark">R</span> Riga Transit</div>
               <div className="brand-subtitle">{language === 'ru' ? 'ГОРОДСКОЙ ТРАНСПОРТ · RĪGA' : language === 'lv' ? 'PILSĒTAS TRANSPORTS · RĪGA' : 'CITY TRANSPORT · RĪGA'}</div>
             </div>
-            <button className="user-chip profile-trigger" onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }} aria-label={t('profile')}>{user?.photo_url ? <img className="profile-trigger-photo" src={user.photo_url} alt="" /> : <span className="profile-trigger-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase("ru-RU")}</span>}<span>{t('profile')}</span><span className="profile-trigger-chevron">↗</span></button>
+            <button className="user-chip profile-trigger" onClick={() => { setProfileNameDraft(profileName); setShowProfile(true); }} aria-label={t('profile')}>{user?.photo_url ? <img className="profile-trigger-photo" src={user.photo_url} alt="" /> : <span className="profile-trigger-avatar">{(profileName || user?.first_name || "Г").slice(0,1).toLocaleUpperCase(localeCode)}</span>}<span>{t('profile')}</span><span className="profile-trigger-chevron">↗</span></button>
           </div>
           <div className="search-wrap">
             <span className="search-icon" aria-hidden="true">⌕</span>
@@ -761,7 +760,7 @@ function App() {
               {matchingStops.map(stop => (
                 <button key={stop.id} onClick={() => selectStop(stop)} className="search-result">
                   <span className="result-pin">●</span>
-                  <span><strong>{stop.name}</strong><small>{stop.routes?.length ? `Маршруты: ${stop.routes.join(', ')}` : 'Остановка общественного транспорта'}</small></span>
+                  <span><strong>{stop.name}</strong><small>{stop.routes?.length ? `${t('routes')}: ${stop.routes.join(', ')}` : t('stopSingular')}</small></span>
                   <span className="result-arrow">↗</span>
                 </button>
               ))}
@@ -770,7 +769,7 @@ function App() {
           {searchOpen && !search.trim() && (favoriteIds.length > 0 || recentIds.length > 0) && (
             <div className="quick-access">
               {favoriteIds.length > 0 && <div className="quick-group">
-                <div className="quick-heading"><span>ИЗБРАННОЕ</span><span>★ {favoriteIds.length}</span></div>
+                <div className="quick-heading"><span>{t('favoriteStops')}</span><span>★ {favoriteIds.length}</span></div>
                 {favoriteIds.slice(0, 5).map(id => activeStops.find(stop => stop.id === id)).filter((stop): stop is Stop => Boolean(stop)).map(stop => (
                   <button key={stop.id} className="quick-row" onClick={() => selectStop(stop)}><span className="quick-star">★</span><span className="quick-name">{stop.name}</span><small>{stop.routes?.slice(0, 3).join(' · ') || t('stopSingular')}</small></button>
                 ))}
@@ -778,7 +777,7 @@ function App() {
               {recentIds.length > 0 && <div className="quick-group">
                 <div className="quick-heading"><span>{t('recentLabel')}</span><span>{t('latest')}</span></div>
                 {recentIds.slice(0, 4).map(id => activeStops.find(stop => stop.id === id)).filter((stop): stop is Stop => Boolean(stop)).map(stop => (
-                  <button key={stop.id} className="quick-row" onClick={() => selectStop(stop)}><span className="quick-recent">↺</span><span className="quick-name">{stop.name}</span><small>{stop.routes?.slice(0, 3).join(' · ') || 'Остановка'}</small></button>
+                  <button key={stop.id} className="quick-row" onClick={() => selectStop(stop)}><span className="quick-recent">↺</span><span className="quick-name">{stop.name}</span><small>{stop.routes?.slice(0, 3).join(' · ') || t('stopShort')}</small></button>
                 ))}
               </div>}
             </div>
@@ -881,9 +880,9 @@ function App() {
                     <div className="schedule-heading"><span>{t('departures')}</span><small>{t('officialSchedule')}</small></div>
                     <div className="schedule-subtitle">{t('nearestDepartures')}</div>
                   </div>
-                  <span className="schedule-live-dot" aria-label="Плановое расписание" />
+                  <span className="schedule-live-dot" aria-label={t('officialSchedule')} />
                 </div>
-                <div className="schedule-filter" role="group" aria-label="Фильтр транспорта">
+                <div className="schedule-filter" role="group" aria-label={t('all')}>
                   {[{id:'all',label:t('all')}, {id:'3',label:t('buses')}, {id:'11',label:t('trolleybuses')}, {id:'0',label:t('trams')}].map(filter => (
                     <button key={filter.id} className={scheduleTransportFilter === filter.id ? 'active' : ''} onClick={() => setScheduleTransportFilter(filter.id)}>{filter.label}</button>
                   ))}
@@ -908,23 +907,23 @@ function App() {
                       <div className="schedule-card-head">
                         <span className={'schedule-vehicle-icon type-' + group.routeType}>{transportIcon(group.routeType)}</span>
                         <span className="schedule-route-number">{group.route}</span>
-                        <span className="schedule-route-copy"><strong>{group.headsign || group.routeName || 'Направление не указано'}</strong><small>{transportType(group.routeType, language)}{group.routeName ? ' · ' + group.routeName : ''}</small></span>
+                        <span className="schedule-route-copy"><strong>{group.headsign || group.routeName || t('directionUnknown')}</strong><small>{transportType(group.routeType, language)}{group.routeName ? ' · ' + group.routeName : ''}</small></span>
                         <span className="schedule-next">
                           <strong>{first ? first.toLocaleTimeString(localeCode, {hour:'2-digit', minute:'2-digit'}) : '—'}</strong>
-                          <small>{first ? departureDayLabel(first, scheduleClock, language) + ' · ' : ''}{minutes < 1 ? 'сейчас' : minutes < 60 ? 'через ' + minutes + ' мин' : 'через ' + Math.floor(minutes / 60) + ' ч ' + (minutes % 60) + ' мин'}</small>
+                          <small>{first ? departureDayLabel(first, scheduleClock, language) + ' · ' : ''}{minutes < 1 ? t('now') : minutes < 60 ? 'через ' + minutes + ' мин' : 'через ' + Math.floor(minutes / 60) + ' ч ' + (minutes % 60) + ' мин'}</small>
                         </span>
                       </div>
                       <div className="schedule-times">
                         {shown.map((departure, index) => <span className={index === 0 ? 'schedule-time next' : 'schedule-time'} key={departure.toISOString()}>
                           <strong>{formatDeparture(departure, scheduleClock, localeCode, language)}</strong>
-                          {index === 0 && <small>{minutes < 1 ? 'сейчас' : '+' + minutes + ' мин'}</small>}
+                          {index === 0 && <small>{minutes < 1 ? t('now') : '+' + minutes + ' мин'}</small>}
                         </span>)}
                       </div>
                       <div className="schedule-card-actions">
                         {group.departures.length > 3 && <button className="schedule-expand" onClick={() => setExpandedScheduleRoutes(current => expanded ? current.filter(key => key !== group.key) : [...current, group.key])}>
-                          {expanded ? 'Свернуть' : 'Ещё ' + (group.departures.length - 3) + ' рейсов'} <span>{expanded ? '⌃' : '⌄'}</span>
+                          {expanded ? t('collapse') : t('moreTrips') + ' ' + (group.departures.length - 3) + ' ' + (language === 'ru' ? 'рейсов' : language === 'lv' ? 'reisi' : 'departures')} <span>{expanded ? '⌃' : '⌄'}</span>
                         </button>}
-                        <button className="schedule-route-detail-link" onClick={() => { setScheduleDateOffset(0); setSelectedRouteDetail(group); setScheduleViewOpen(true); }}>Маршрут <span>↗</span></button>
+                        <button className="schedule-route-detail-link" onClick={() => { setScheduleDateOffset(0); setSelectedRouteDetail(group); setScheduleViewOpen(true); }}>{t('route')} <span>↗</span></button>
                       </div>
                     </article>
                   );
@@ -941,11 +940,11 @@ function App() {
                   {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">{t('calendarError')}</div>}
                   <label className="schedule-search">
                     <span>⌕</span>
-                    <input value={scheduleSearch} onChange={event => setScheduleSearch(event.target.value)} placeholder={t('routeSearch')} aria-label="Поиск по расписанию" />
-                    {scheduleSearch && <button onClick={() => setScheduleSearch('')} aria-label="Очистить поиск">×</button>}
+                    <input value={scheduleSearch} onChange={event => setScheduleSearch(event.target.value)} placeholder={t('routeSearch')} aria-label={t('routeSearchLabel')} />
+                    {scheduleSearch && <button onClick={() => setScheduleSearch('')} aria-label={t('clearSearch')}>×</button>}
                   </label>
                   <div className="schedule-results-count">{visibleFullDayDepartures.length} {visibleFullDayDepartures.length === 1 ? 'направление' : 'направлений'} · {visibleFullDayDepartures.reduce((sum, group) => sum + group.departures.length, 0)} отправлений</div>
-                  <div className="schedule-date-tabs" role="group" aria-label="Дата расписания">
+                  <div className="schedule-date-tabs" role="group" aria-label={t('dateLabel')}>
                     <button className={scheduleDateOffset === 0 ? 'active' : ''} onClick={() => setScheduleDateOffset(0)}>{t('today')}</button>
                     <button className={scheduleDateOffset === 1 ? 'active' : ''} onClick={() => setScheduleDateOffset(1)}>{t('tomorrow')}</button>
                     <span>{selectedScheduleDate.toLocaleDateString(localeCode, { day: 'numeric', month: 'long', weekday: 'short' })}</span>
@@ -978,10 +977,10 @@ function App() {
                       })()}
                     </section>
                   ) : visibleFullDayDepartures.map(group => <article className="full-route-group" key={group.key}>
-                    <button className="full-route-heading route-open-button" onClick={() => setSelectedRouteDetail(group)} aria-label={'Открыть маршрут ' + group.route + ', ' + group.headsign}>
+                    <button className="full-route-heading route-open-button" onClick={() => setSelectedRouteDetail(group)} aria-label={t('routeOpen') + ' ' + group.route + ', ' + group.headsign}>
                       <span className={'schedule-vehicle-icon type-' + group.routeType}>{transportIcon(group.routeType)}</span>
                       <span className="schedule-route-number">{group.route}</span>
-                      <span className="full-route-copy"><strong>{group.headsign || group.routeName || 'Направление не указано'}</strong><small>{transportType(group.routeType, language)} · {group.departures.length} рейсов</small></span>
+                      <span className="full-route-copy"><strong>{group.headsign || group.routeName || t('directionUnknown')}</strong><small>{transportType(group.routeType, language)} · {group.departures.length} рейсов</small></span>
                       <span className="route-open-chevron">›</span>
                     </button>
                     <div className="full-departure-list">
@@ -1000,7 +999,7 @@ function App() {
                 <div className="schedule-footnote"><span>ⓘ</span> {t('plannedTimes')}</div>
               </div>
             </div>
-            <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? "Убрать из избранного" : "Добавить в избранное"} title={favoriteIds.includes(selectedStop.id) ? "В избранном" : "В избранное"}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setSelectedRouteDetail(null); setScheduleViewOpen(false); setShowAddForm(false); }} aria-label={t('close')}>×</button></div>
+            <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? t('removeFavorite') : t('addFavorite')} title={favoriteIds.includes(selectedStop.id) ? "В избранном" : "В избранное"}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setSelectedRouteDetail(null); setScheduleViewOpen(false); setShowAddForm(false); }} aria-label={t('close')}>×</button></div>
           </div>
 
           <div className="reports-heading"><span>{t('reportsTitle')}</span><span className="local-label">{t('localTwoHours')}</span></div>
@@ -1012,16 +1011,16 @@ function App() {
               return <article className="report-card" key={report.id}>
                 <div className="report-meta"><span className={`report-tag ${type?.color ?? ''}`}>{type?.label ?? 'Сообщение'}</span><time>{report.time}</time></div>
                 {report.text && <p>{report.text}</p>}
-                <small>{report.user ?? 'Аноним'}</small>
+                <small>{report.user ?? t('anonymous')}</small>
               </article>;
             })}
           </div>
 
           {!showAddForm ? (
-            <button className="primary-button" onClick={() => setShowAddForm(true)}>＋ Добавить наблюдение</button>
+            <button className="primary-button" onClick={() => setShowAddForm(true)}>{t('addObservation')}</button>
           ) : (
             <div className="report-form">
-              <div className="form-title">Что происходит на остановке?</div>
+              <div className="form-title">{t('whatHappens')}</div>
               <div className="report-type-grid">
                 {REPORT_TYPES.map(type => (
                   <button key={type.id} onClick={() => setReportType(type.id)}
@@ -1031,10 +1030,10 @@ function App() {
                 ))}
               </div>
               <input className="comment-input" value={reportText} maxLength={160}
-                onChange={event => setReportText(event.target.value)} placeholder="Комментарий до 160 символов (необязательно)" />
+                onChange={event => setReportText(event.target.value)} placeholder={t('commentPlaceholder')} />
               <div className="form-footer"><span>{reportText.length}/160</span>
-                <button className="secondary-button" onClick={() => setShowAddForm(false)}>Отмена</button>
-                <button className="primary-button compact" onClick={addReport}>Опубликовать</button>
+                <button className="secondary-button" onClick={() => setShowAddForm(false)}>{t('cancel')}</button>
+                <button className="primary-button compact" onClick={addReport}>{t('publish')}</button>
               </div>
             </div>
           )}
@@ -1048,7 +1047,7 @@ function App() {
           {favoriteIds.length === 0 ? <div className="favorites-empty">{t('favoritesEmpty')}</div> :
             favoriteIds.map(id => activeStops.find(stop => stop.id === id)).filter((stop): stop is Stop => Boolean(stop)).map(stop => (
               <button className="favorites-row" key={stop.id} onClick={() => { setActiveTab('map'); selectStop(stop); }}>
-                <span className="favorites-star">★</span><span className="favorites-name">{stop.name}</span><small>{stop.routes?.slice(0, 4).join(' · ') || 'Остановка'}</small><b>↗</b>
+                <span className="favorites-star">★</span><span className="favorites-name">{stop.name}</span><small>{stop.routes?.slice(0, 4).join(' · ') || t('stopShort')}</small><b>↗</b>
               </button>
             ))}
         </aside>
