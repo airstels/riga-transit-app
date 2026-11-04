@@ -66,7 +66,7 @@ function distanceKm(a: Coordinates, b: Coordinates): number {
 }
 
 function formatDistance(km: number): string {
-  return km < 1 ? \`\${Math.round(km * 1000)} м\` : \`\${km.toFixed(1)} км\`;
+  return km < 1 ? `${Math.round(km * 1000)} м` : `${km.toFixed(1)} км`;
 }
 
 function MapFocus({ target }: { target: Coordinates | null }) {
@@ -181,7 +181,7 @@ function App() {
     if (!selectedStop) return;
     const now = Date.now();
     const report: Report = {
-      id: \`\${now}-\${Math.random().toString(36).slice(2, 8)}\`,
+      id: `${now}-${Math.random().toString(36).slice(2, 8)}`,
       stopId: selectedStop.id,
       type: reportType,
       text: reportText.trim().slice(0, 160),
@@ -222,7 +222,7 @@ function App() {
               <div className="brand-title">Riga Transit <span className="live-dot" /></div>
               <div className="brand-subtitle">Карта остановок Риги · демо-данные</div>
             </div>
-            <div className="user-chip">{user?.first_name ? \`Привет, \${user.first_name}\` : 'RĪGA'}</div>
+            <div className="user-chip">{user?.first_name ? `Привет, ${user.first_name}` : 'RĪGA'}</div>
           </div>
           <div className="search-wrap">
             <span className="search-icon">⌕</span>
@@ -244,7 +244,7 @@ function App() {
               {matchingStops.map(stop => (
                 <button key={stop.id} onClick={() => selectStop(stop)} className="search-result">
                   <span className="result-pin">●</span>
-                  <span><strong>{stop.name}</strong><small>{stop.routes?.length ? \`Линии в демо: \${stop.routes.join(', ')}\` : 'Остановка / точка'}</small></span>
+                  <span><strong>{stop.name}</strong><small>{stop.routes?.length ? `Линии в демо: ${stop.routes.join(', ')}` : 'Остановка / точка'}</small></span>
                   <span className="result-arrow">↗</span>
                 </button>
               ))}
@@ -282,7 +282,7 @@ function App() {
       )}
 
       {selectedStop && (
-        <section className="stop-sheet glass" aria-label={\`Остановка \${selectedStop.name}\`}>
+        <section className="stop-sheet glass" aria-label={`Остановка ${selectedStop.name}`}>
           <div className="sheet-handle" />
           <div className="sheet-heading">
             <div>
@@ -304,7 +304,7 @@ function App() {
             ) : selectedReports.map(report => {
               const type = REPORT_TYPES.find(item => item.id === report.type);
               return <article className="report-card" key={report.id}>
-                <div className="report-meta"><span className={\`report-tag \${type?.color ?? ''}\`}>{type?.label ?? 'Сообщение'}</span><time>{report.time}</time></div>
+                <div className="report-meta"><span className={`report-tag ${type?.color ?? ''}`}>{type?.label ?? 'Сообщение'}</span><time>{report.time}</time></div>
                 {report.text && <p>{report.text}</p>}
                 <small>{report.user ?? 'Аноним'}</small>
               </article>;
@@ -319,7 +319,7 @@ function App() {
               <div className="report-type-grid">
                 {REPORT_TYPES.map(type => (
                   <button key={type.id} onClick={() => setReportType(type.id)}
-                    className={\`report-type \${reportType === type.id ? 'selected' : ''}\`}>
+                    className={`report-type ${reportType === type.id ? 'selected' : ''}`}>
                     <i style={{ background: type.dot }} />{type.label}
                   </button>
                 ))}
