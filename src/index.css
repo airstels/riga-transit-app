@@ -39,7 +39,7 @@ button:disabled { opacity: .65; cursor: wait; }
 .search-result small { margin-top: 3px; color: #7f8b96; font-size: 10px; }
 .result-arrow { margin-left: auto; color: #7f8b96; }
 .search-empty { position: absolute; top: 100%; left: 14px; right: 14px; padding: 14px; border-radius: 0 0 14px 14px; color: #aab4be; background: #171d24; font-size: 12px; }
-.map-actions { position: absolute; z-index: 450; top: 158px; right: 14px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.map-actions { position: absolute; z-index: 450; top: clamp(176px, 24dvh, 300px); right: 14px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .map-action { display: flex; align-items: center; gap: 8px; padding: 10px 13px; border: 1px solid rgba(255,255,255,.12); border-radius: 13px; color: #f5f7fa; background: rgba(18,24,31,.94); box-shadow: 0 5px 20px #0005; font-size: 11px; font-weight: 600; backdrop-filter: blur(12px); }
 .map-action span { color: #68c9f5; font-size: 17px; }
 .nearest-button { color: #d9c39d; }

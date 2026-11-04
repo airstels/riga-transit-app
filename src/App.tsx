@@ -81,6 +81,34 @@ function MapFocus({ target }: { target: Coordinates | null }) {
   return null;
 }
 
+function MapResize() {
+  const map = useMap();
+
+  useEffect(() => {
+    const container = map.getContainer();
+    let frame = 0;
+    const resize = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => map.invalidateSize({ pan: false }));
+    };
+
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(container);
+    window.addEventListener('orientationchange', resize);
+    window.addEventListener('resize', resize);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('orientationchange', resize);
+      window.removeEventListener('resize', resize);
+    };
+  }, [map]);
+
+  return null;
+}
+
 function App() {
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
@@ -204,9 +232,11 @@ function App() {
     <main className="app-shell">
       <MapContainer center={CENTER} zoom={13} className="map-canvas" zoomControl={false} preferCanvas>
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · CARTO'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
         />
+        <MapResize />
         <MapFocus target={mapTarget} />
         {activeStops.map(stop => (
           <Marker key={stop.id} position={[stop.lat, stop.lon]} icon={stopIcon}
@@ -341,7 +371,7 @@ function App() {
         </section>
       )}
 
-      <div className="map-credit">© OpenStreetMap · CARTO</div>
+      <div className="map-credit">© OpenStreetMap contributors</div>
     </main>
   );
 }
