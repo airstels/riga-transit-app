@@ -145,7 +145,7 @@ def build_timetable_data(tables):
         index[stop_id] = shard
         bucket = shards.setdefault(shard, {}).setdefault(stop_id, [])
         # Compact tuple: time, route number, route name, GTFS type, service, destination, direction.
-        bucket.append([departure, *trip[1:]])
+        bucket.append([departure, trip[1], trip[2], trip[3], trip[0], trip[4], trip[5]])
 
     for stop_rows in shards.values():
         for rows in stop_rows.values():
