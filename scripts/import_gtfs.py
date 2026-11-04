@@ -154,7 +154,7 @@ def build_timetable_data(tables):
 
 
 
-def build_route_patterns(tables):
+def build_route_patterns(tables):  # Used by the full route-detail view in the client.
     """Build deduplicated route/direction stop sequences for on-demand route details."""
     route_lookup = {}
     for route in tables.get("routes", []):
