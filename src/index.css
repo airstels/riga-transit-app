@@ -368,3 +368,95 @@ button:disabled { opacity: .65; cursor: wait; }
   .nearest-row { min-height: 34px; gap: 5px; }
   .map-action { min-height: 42px; padding: 9px 11px; }
 }
+
+
+/* Personal stop shortcuts */
+.quick-access {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: min(48dvh, 390px);
+  margin: 0 -2px;
+  padding: 13px 3px 3px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.quick-group { display: flex; flex-direction: column; gap: 2px; }
+.quick-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 7px 6px;
+  color: #d9bc83;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.25px;
+}
+.quick-heading span:last-child { color: #7f8b94; font-size: 8px; letter-spacing: .8px; }
+.quick-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 37px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 10px;
+  color: #edf1f4;
+  background: transparent;
+  text-align: left;
+}
+.quick-row:active, .quick-row:hover { background: rgba(218,183,120,.09); }
+.quick-star, .quick-recent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #d9bc83;
+  font-size: 13px;
+}
+.quick-recent { color: #8998a2; }
+.quick-name {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quick-row small {
+  max-width: 112px;
+  overflow: hidden;
+  color: #82909a;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sheet-actions { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.favorite-toggle {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(218,183,120,.25);
+  border-radius: 11px;
+  color: #aab3b9;
+  background: rgba(255,255,255,.045);
+  font-size: 20px;
+  transition: transform .16s ease, color .16s ease, background .16s ease;
+}
+.favorite-toggle:active { transform: scale(.92); }
+.favorite-toggle.is-favorite {
+  color: #f0d9a8;
+  border-color: rgba(218,183,120,.5);
+  background: rgba(218,183,120,.13);
+  text-shadow: 0 0 14px rgba(218,183,120,.25);
+}
+.search-results, .search-empty, .quick-access {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(218,183,120,.3) transparent;
+}
+@media (max-width: 380px) {
+  .quick-access { max-height: 42dvh; gap: 9px; }
+  .quick-row { min-height: 34px; gap: 6px; }
+}

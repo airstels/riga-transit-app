@@ -32,6 +32,8 @@ declare global {
 
 const CENTER: [number, number] = [56.9496, 24.1052];
 const STORAGE_KEY = 'riga-reports';
+const FAVORITES_KEY = 'riga-favorite-stops';
+const RECENT_KEY = 'riga-recent-stops';
 const MAX_REPORTS = 100;
 const REPORT_TTL_MS = 2 * 60 * 60 * 1000;
 const REPORT_TYPES: { id: ReportType; label: string; color: string; dot: string }[] = [
@@ -189,6 +191,8 @@ function App() {
   const [gpsState, setGpsState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [gpsError, setGpsError] = useState('');
   const [mapTarget, setMapTarget] = useState<Coordinates | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [recentIds, setRecentIds] = useState<string[]>([]);
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -198,6 +202,14 @@ function App() {
       tg.setHeaderColor?.('#111820');
       tg.setBackgroundColor?.('#111820');
       setUser(tg.initDataUnsafe?.user ?? null);
+    }
+    try {
+      const savedFavorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? '[]');
+      if (Array.isArray(savedFavorites)) setFavoriteIds(savedFavorites.filter((id): id is string => typeof id === 'string' && activeStops.some(stop => stop.id === id)));
+      const savedRecent = JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]');
+      if (Array.isArray(savedRecent)) setRecentIds(savedRecent.filter((id): id is string => typeof id === 'string' && activeStops.some(stop => stop.id === id)).slice(0, 6));
+    } catch (error) {
+      console.warn('Не удалось прочитать избранные остановки', error);
     }
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -244,7 +256,18 @@ function App() {
     }
   };
 
+  const toggleFavorite = (stop: Stop) => {
+    const next = favoriteIds.includes(stop.id) ? favoriteIds.filter(id => id !== stop.id) : [stop.id, ...favoriteIds];
+    setFavoriteIds(next);
+    try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(next)); }
+    catch (error) { console.warn('Не удалось сохранить избранное', error); }
+  };
+
   const selectStop = (stop: Stop) => {
+    const nextRecent = [stop.id, ...recentIds.filter(id => id !== stop.id)].slice(0, 6);
+    setRecentIds(nextRecent);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(nextRecent)); }
+    catch (error) { console.warn('Не удалось сохранить историю поиска', error); }
     setSelectedStop(stop);
     setShowAddForm(false);
     setSearch(stop.name);
@@ -322,7 +345,7 @@ function App() {
               <div className="brand-title"><span className="brand-mark">R</span> Riga Transit</div>
               <div className="brand-subtitle">ГОРОДСКОЙ ТРАНСПОРТ · RĪGA</div>
             </div>
-            <div className="user-chip">{user?.first_name ? `Привет, ${user.first_name}` : `${activeStops.length.toLocaleString('ru-RU')} остановки`}</div>
+            <div className="user-chip">{user?.first_name ? `Привет, ${user.first_name}` : `★ ${favoriteIds.length} избранных`}</div>
           </div>
           <div className="search-wrap">
             <span className="search-icon" aria-hidden="true">⌕</span>
@@ -348,6 +371,22 @@ function App() {
                   <span className="result-arrow">↗</span>
                 </button>
               ))}
+            </div>
+          )}
+          {searchOpen && !search.trim() && (favoriteIds.length > 0 || recentIds.length > 0) && (
+            <div className="quick-access">
+              {favoriteIds.length > 0 && <div className="quick-group">
+                <div className="quick-heading"><span>ИЗБРАННОЕ</span><span>★ {favoriteIds.length}</span></div>
+                {favoriteIds.slice(0, 5).map(id => activeStops.find(stop => stop.id === id)).filter((stop): stop is Stop => Boolean(stop)).map(stop => (
+                  <button key={stop.id} className="quick-row" onClick={() => selectStop(stop)}><span className="quick-star">★</span><span className="quick-name">{stop.name}</span><small>{stop.routes?.slice(0, 3).join(' · ') || 'Остановка'}</small></button>
+                ))}
+              </div>}
+              {recentIds.length > 0 && <div className="quick-group">
+                <div className="quick-heading"><span>НЕДАВНИЕ</span><span>ПОСЛЕДНИЕ</span></div>
+                {recentIds.slice(0, 4).map(id => activeStops.find(stop => stop.id === id)).filter((stop): stop is Stop => Boolean(stop)).map(stop => (
+                  <button key={stop.id} className="quick-row" onClick={() => selectStop(stop)}><span className="quick-recent">↺</span><span className="quick-name">{stop.name}</span><small>{stop.routes?.slice(0, 3).join(' · ') || 'Остановка'}</small></button>
+                ))}
+              </div>}
             </div>
           )}
           {searchOpen && search.trim() && matchingStops.length === 0 && (
@@ -389,7 +428,7 @@ function App() {
                 </div>
               )}
             </div>
-            <button className="close-sheet" onClick={() => { setSelectedStop(null); setShowAddForm(false); }} aria-label="Закрыть">×</button>
+            <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? "Убрать из избранного" : "Добавить в избранное"} title={favoriteIds.includes(selectedStop.id) ? "В избранном" : "В избранное"}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setShowAddForm(false); }} aria-label="Закрыть">×</button></div>
           </div>
 
           <div className="reports-heading"><span>Сообщения сообщества</span><span className="local-label">локально · актуально 2 часа</span></div>
