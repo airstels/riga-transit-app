@@ -460,3 +460,14 @@ button:disabled { opacity: .65; cursor: wait; }
   .quick-access { max-height: 42dvh; gap: 9px; }
   .quick-row { min-height: 34px; gap: 6px; }
 }
+
+.profile-trigger-photo {
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  border: 1px solid rgba(232,205,157,.48);
+  border-radius: 9px;
+  object-fit: cover;
+}
+.profile-avatar-photo { display: block; object-fit: cover; }

@@ -18,7 +18,7 @@ interface Report {
   user?: string;
 }
 interface Coordinates { lat: number; lon: number; accuracy?: number }
-interface TelegramUser { first_name?: string; last_name?: string }
+interface TelegramUser { first_name?: string; last_name?: string; photo_url?: string }
 interface TelegramWebApp {
   ready(): void;
   expand(): void;
