@@ -4,7 +4,8 @@ import L from 'leaflet';
 import { stops, type Stop } from './data/stops';
 import { officialStops, gtfsMetadata } from './data/gtfs-data';
 
-const activeStops: Stop[] = officialStops.length > 0 ? officialStops : stops;
+// Never show hand-entered demo coordinates: only official GTFS stops are allowed on the map.
+const activeStops: Stop[] = officialStops;
 
 type ReportType = 'check' | 'crowded' | 'delay' | 'empty' | 'other';
 interface Report {
@@ -40,13 +41,6 @@ const REPORT_TYPES: { id: ReportType; label: string; color: string; dot: string 
   { id: 'empty', label: 'Свободно', color: 'bg-emerald-500/20 text-emerald-300', dot: '#10b981' },
   { id: 'other', label: 'Другое', color: 'bg-sky-500/20 text-sky-300', dot: '#38bdf8' },
 ];
-const stopIcon = new L.DivIcon({
-  className: 'stop-marker',
-  html: '<span></span>',
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-});
-
 function isReport(value: unknown): value is Report {
   if (!value || typeof value !== 'object') return false;
   const item = value as Record<string, unknown>;
@@ -120,44 +114,57 @@ const clusterIcon = (count: number) => L.divIcon({
 function StopLayer({ stops: mapStops, onSelect }: { stops: Stop[]; onSelect: (stop: Stop) => void }) {
   const map = useMap();
   const [viewport, setViewport] = useState(0);
-
   useMapEvents({
     zoomend: () => setViewport(value => value + 1),
     moveend: () => setViewport(value => value + 1),
   });
 
   const groups = useMemo(() => {
+    const bounds = map.getBounds().pad(0.18);
+    const visible = mapStops.filter(stop => bounds.contains([stop.lat, stop.lon]));
     const zoom = map.getZoom();
-    const cellSize = zoom >= 16 ? 56 : zoom >= 14 ? 48 : 40;
+    if (zoom >= 16) {
+      return visible.map(stop => ({ items: [stop], lat: stop.lat, lon: stop.lon }));
+    }
+
+    const cellSize = zoom >= 15 ? 38 : zoom >= 14 ? 32 : 28;
     const buckets = new Map<string, Stop[]>();
-    for (const stop of mapStops) {
+    for (const stop of visible) {
       const point = map.project([stop.lat, stop.lon], zoom);
       const key = `${Math.floor(point.x / cellSize)}:${Math.floor(point.y / cellSize)}`;
       const bucket = buckets.get(key);
       if (bucket) bucket.push(stop);
       else buckets.set(key, [stop]);
     }
-    return Array.from(buckets.values()).map(items => ({
-      items,
-      lat: items.reduce((sum, item) => sum + item.lat, 0) / items.length,
-      lon: items.reduce((sum, item) => sum + item.lon, 0) / items.length,
-    }));
+
+    return Array.from(buckets.values()).map(items => {
+      if (items.length === 1) return { items, lat: items[0].lat, lon: items[0].lon };
+      const meanLat = items.reduce((sum, item) => sum + item.lat, 0) / items.length;
+      const meanLon = items.reduce((sum, item) => sum + item.lon, 0) / items.length;
+      const anchor = items.reduce((best, item) => {
+        const score = (item.lat - meanLat) ** 2 + (item.lon - meanLon) ** 2;
+        const bestScore = (best.lat - meanLat) ** 2 + (best.lon - meanLon) ** 2;
+        return score < bestScore ? item : best;
+      }, items[0]);
+      return { items, lat: anchor.lat, lon: anchor.lon };
+    });
   }, [map, mapStops, viewport]);
 
   return (
     <>
       {groups.map(group => group.items.length === 1 ? (
-        <Marker key={group.items[0].id} position={[group.items[0].lat, group.items[0].lon]}
-          icon={stopIcon} eventHandlers={{ click: () => onSelect(group.items[0]) }} />
+        <CircleMarker key={group.items[0].id}
+          center={[group.items[0].lat, group.items[0].lon]} radius={5}
+          pathOptions={{ color: '#ffffff', weight: 1.8, opacity: 1, fillColor: '#168fc5', fillOpacity: 1 }}
+          eventHandlers={{ click: () => onSelect(group.items[0]) }} />
       ) : (
-        <Marker key={group.items.map(item => item.id).join('|')} position={[group.lat, group.lon]}
-          icon={clusterIcon(group.items.length)}
+        <Marker key={group.items.map(item => item.id).join('|')}
+          position={[group.lat, group.lon]} icon={clusterIcon(group.items.length)}
           eventHandlers={{ click: () => map.setView([group.lat, group.lon], Math.min(map.getZoom() + 2, 18), { animate: true }) }} />
       ))}
     </>
   );
 }
-
 function App() {
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
@@ -279,7 +286,7 @@ function App() {
 
   return (
     <main className="app-shell">
-      <MapContainer center={CENTER} zoom={13} className="map-canvas" zoomControl={false} preferCanvas>
+      <MapContainer center={CENTER} zoom={14.5} className="map-canvas" zoomControl={false} preferCanvas>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -325,7 +332,7 @@ function App() {
               {matchingStops.map(stop => (
                 <button key={stop.id} onClick={() => selectStop(stop)} className="search-result">
                   <span className="result-pin">●</span>
-                  <span><strong>{stop.name}</strong><small>{stop.routes?.length ? `Линии в демо: ${stop.routes.join(', ')}` : 'Остановка / точка'}</small></span>
+                  <span><strong>{stop.name}</strong><small>{stop.routes?.length ? `Маршруты: ${stop.routes.join(', ')}` : 'Остановка общественного транспорта'}</small></span>
                   <span className="result-arrow">↗</span>
                 </button>
               ))}
@@ -413,11 +420,11 @@ function App() {
               </div>
             </div>
           )}
-          <div className="data-note">{gtfsMetadata.importedAt ? `GTFS: обновлено ${gtfsMetadata.importedAt}. Расписание и маршруты ещё не реализованы.` : 'Данные остановок и номера линий пока демонстрационные, не использовать для планирования поездки.'}</div>
+          <div className="data-note">{gtfsMetadata.importedAt ? `Официальные координаты Rīgas satiksme · GTFS ${gtfsMetadata.importedAt}.` : 'Официальный каталог остановок пока недоступен. Демонстрационные точки отключены.'}</div>
         </section>
       )}
 
-      <div className="map-credit">© OpenStreetMap contributors</div>
+      
     </main>
   );
 }

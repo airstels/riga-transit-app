@@ -17,16 +17,16 @@ class GtfsImportTests(unittest.TestCase):
                 "routes.txt": "route_id,route_short_name,route_long_name\nr1,3,Route 3\n",
                 "trips.txt": "route_id,service_id,trip_id\nr1,s1,t1\n",
                 "stop_times.txt": "trip_id,arrival_time,departure_time,stop_id,stop_sequence\nt1,08:00:00,08:00:00,s1,1\n",
-                "stops.txt": "stop_id,stop_name,stop_lat,stop_lon\ns1,Centrs,56.95,24.10\ns2,Bad,,24.1\ns3,Far East,56.0,120.0\n",
+                "stops.txt": "stop_id,stop_name,stop_lat,stop_lon,location_type\ns1,Centrs,56.95,24.10,0\ns2,Bad,,24.1,0\ns3,Far East,56.0,120.0,0\ns4,Station,56.951,24.101,1\ns5,Unused,56.952,24.102,0\n",
             }
             with zipfile.ZipFile(archive_path, "w") as archive:
                 for name, value in tables.items():
                     archive.writestr(name, value)
             with zipfile.ZipFile(archive_path) as archive:
                 stops, metadata = import_feed(archive)
-            self.assertEqual(len(stops), 2)
+            self.assertEqual(len(stops), 1)
             self.assertEqual(stops[0]["routes"], ["3"])
-            self.assertEqual(metadata["stopCount"], 2)
+            self.assertEqual(metadata["stopCount"], 1)
             self.assertEqual(metadata["routeCount"], 1)
 
     def test_empty_feed_is_rejected(self):

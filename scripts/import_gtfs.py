@@ -65,7 +65,10 @@ def load_feed(source, source_url=None):
     trip_routes = {row.get("trip_id", "").strip(): row.get("route_id", "").strip()
                    for row in tables["trips.txt"] if row.get("trip_id") and row.get("route_id")}
     stop_routes = {}
+    served_stop_ids = set()
     for row in tables["stop_times.txt"]:
+        served_id = row.get("stop_id", "").strip()
+        if served_id: served_stop_ids.add(served_id)
         stop_id = row.get("stop_id", "").strip()
         route_id = trip_routes.get(row.get("trip_id", "").strip())
         if stop_id and route_id in route_names:
@@ -74,7 +77,10 @@ def load_feed(source, source_url=None):
     for row in tables["stops.txt"]:
         stop_id, name = row.get("stop_id", "").strip(), row.get("stop_name", "").strip()
         lat, lon = valid_float(row.get("stop_lat"), -90, 90), valid_float(row.get("stop_lon"), -180, 180)
-        if not stop_id or stop_id in seen or not name or lat is None or lon is None: continue
+        location_type = (row.get("location_type") or "0").strip()
+        # Keep only passenger boarding points used by actual trips; exclude parent stations.
+        if location_type not in ("", "0"): continue
+        if not stop_id or stop_id not in served_stop_ids or stop_id in seen or not name or lat is None or lon is None: continue
         seen.add(stop_id)
         stops.append({"id": stop_id, "name": name, "lat": lat, "lon": lon,
                       "routes": sorted(stop_routes.get(stop_id, set()),
