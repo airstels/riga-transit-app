@@ -982,3 +982,136 @@ button:disabled { opacity: .65; cursor: wait; }
   font-weight:800;
 }
 .schedule-open-row button span { margin-left:4px; font-size:12px; }
+
+
+/* Stop sheet: let the timetable occupy the complete content width. */
+.stop-sheet:not(.schedule-open) { position:absolute; }
+.stop-sheet:not(.schedule-open) .sheet-heading {
+  position:relative;
+  display:block;
+  width:100%;
+  padding:10px 0 12px;
+}
+.stop-sheet:not(.schedule-open) .sheet-heading > div:first-child {
+  display:block;
+  width:100%;
+  min-width:0;
+}
+.stop-sheet:not(.schedule-open) .sheet-heading .panel-eyebrow,
+.stop-sheet:not(.schedule-open) .sheet-heading h2 { max-width:calc(100% - 88px); }
+.stop-sheet:not(.schedule-open) .sheet-actions {
+  position:absolute;
+  top:7px;
+  right:0;
+  z-index:2;
+}
+.stop-sheet:not(.schedule-open) .schedule-panel {
+  display:block;
+  width:100%;
+  max-width:none;
+  margin:15px 0 0;
+  box-sizing:border-box;
+}
+.stop-sheet:not(.schedule-open) .route-chips { max-width:calc(100% - 82px); }
+
+/* Compact upcoming departures: one clean route row, then a short time strip. */
+.stop-sheet:not(.schedule-open) .schedule-route-card {
+  margin-top:8px;
+  padding:9px 10px 7px;
+  border-radius:13px;
+}
+.stop-sheet:not(.schedule-open) .schedule-card-head { gap:7px; }
+.stop-sheet:not(.schedule-open) .schedule-vehicle-icon { width:30px; height:30px; flex-basis:30px; }
+.stop-sheet:not(.schedule-open) .schedule-route-number { min-width:30px; height:29px; display:grid; place-items:center; padding:0 6px; }
+.stop-sheet:not(.schedule-open) .schedule-route-copy strong { font-size:11px; }
+.stop-sheet:not(.schedule-open) .schedule-route-copy small { font-size:8px; }
+.stop-sheet:not(.schedule-open) .schedule-next strong { font-size:17px; }
+.stop-sheet:not(.schedule-open) .schedule-next small { font-size:8px; }
+.stop-sheet:not(.schedule-open) .schedule-times { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:8px; }
+.stop-sheet:not(.schedule-open) .schedule-time { min-height:34px; padding:3px 2px; border-radius:8px; }
+.stop-sheet:not(.schedule-open) .schedule-time strong { font-size:11px; }
+.schedule-card-actions { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:27px; margin-top:4px; }
+.stop-sheet:not(.schedule-open) .schedule-expand {
+  width:auto;
+  min-height:26px;
+  margin:0;
+  padding:4px 2px;
+  justify-content:flex-start;
+  font-size:9px;
+}
+.schedule-route-detail-link {
+  min-height:26px;
+  padding:3px 7px;
+  border:1px solid rgba(218,183,120,.18);
+  border-radius:7px;
+  color:#cdb27f;
+  background:rgba(218,183,120,.055);
+  font-size:9px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.schedule-route-detail-link span { margin-left:3px; }
+
+/* Full-day tools: search, result count and compact departure matrix. */
+.schedule-search {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-height:42px;
+  margin:0 0 7px;
+  padding:0 12px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:11px;
+  background:rgba(255,255,255,.045);
+}
+.schedule-search > span { color:#d3b77f; font-size:18px; line-height:1; }
+.schedule-search input {
+  width:100%;
+  min-width:0;
+  border:0;
+  outline:0;
+  color:#edf1f3;
+  background:transparent;
+  font:inherit;
+  font-size:11px;
+}
+.schedule-search input::placeholder { color:#7f8c96; }
+.schedule-search button {
+  width:24px;
+  height:24px;
+  flex:0 0 24px;
+  border:0;
+  border-radius:50%;
+  color:#c8b48d;
+  background:rgba(255,255,255,.07);
+  font-size:17px;
+}
+.schedule-results-count {
+  margin:0 2px 9px;
+  color:#82909a;
+  font-size:9px;
+  font-weight:650;
+}
+.schedule-open .schedule-search { position:sticky; top:45px; z-index:3; background:rgba(13,19,25,.97); backdrop-filter:blur(14px); }
+.schedule-open .schedule-results-count { padding:2px 0 5px; }
+.schedule-open .full-departure-list { grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; }
+.schedule-open .full-departure { min-height:39px; gap:2px; border-radius:8px; }
+.schedule-open .full-departure strong { font-size:12px; }
+.schedule-open .full-departure small { font-size:7px; }
+.schedule-open .full-route-group { padding:10px; margin-bottom:8px; border-radius:12px; }
+.schedule-open .full-route-heading { padding-bottom:8px; }
+.schedule-open .full-route-heading .schedule-vehicle-icon { width:27px; height:27px; flex-basis:27px; }
+.schedule-open .full-route-heading .schedule-route-number { min-width:28px; height:27px; font-size:11px; }
+.schedule-open .full-route-copy strong { font-size:11px; }
+.schedule-open .full-route-copy small { font-size:8px; }
+.schedule-open .schedule-filter button { min-height:32px; padding:0 10px; }
+.schedule-open .schedule-date-tabs button { min-height:33px; }
+.schedule-open .route-stop-list li { min-height:42px; }
+@media(max-width:420px) {
+  .stop-sheet:not(.schedule-open) .schedule-panel { padding:12px 10px 9px; }
+  .stop-sheet:not(.schedule-open) .schedule-filter { gap:4px; margin:9px 0 7px; }
+  .stop-sheet:not(.schedule-open) .schedule-filter button { flex:1 1 0; min-width:0; padding:0 5px; font-size:8px; }
+  .stop-sheet:not(.schedule-open) .schedule-route-card { padding:8px; }
+  .stop-sheet:not(.schedule-open) .schedule-next strong { font-size:15px; }
+  .schedule-open .full-departure-list { grid-template-columns:repeat(4,minmax(0,1fr)); }
+}
