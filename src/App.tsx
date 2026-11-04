@@ -299,10 +299,9 @@ function App() {
     <main className="app-shell">
       <MapContainer center={CENTER} zoom={14.5} className="map-canvas" zoomControl={false} preferCanvas>
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          subdomains="abcd"
-          maxZoom={20}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
         />
         <MapResize />
         <MapZoomControl />
@@ -362,11 +361,6 @@ function App() {
           <span>{gpsState === 'loading' ? '…' : '◎'}</span>
           {gpsState === 'loading' ? 'Определяем…' : 'Где я'}
         </button>
-        {position && nearestStops[0] && (
-          <button className="map-action nearest-button" onClick={() => selectStop(nearestStops[0].stop)}>
-            <span>⌖</span> Ближайшая · {formatDistance(nearestStops[0].distance)}
-          </button>
-        )}
       </div>
 
       {gpsError && <div className="gps-error" role="status">{gpsError}<button onClick={() => setGpsError('')}>×</button></div>}
@@ -374,9 +368,9 @@ function App() {
       {position && nearestStops.length > 0 && !selectedStop && (
         <aside className="nearest-panel glass">
           <div className="panel-eyebrow">РЯДОМ С ВАМИ</div>
-          {nearestStops.map(({ stop, distance }) => (
+          {nearestStops.slice(0, 3).map(({ stop, distance }, index) => (
             <button key={stop.id} className="nearest-row" onClick={() => selectStop(stop)}>
-              <span className="nearest-name">{stop.name}</span><span className="nearest-distance">{formatDistance(distance)}</span>
+              <span className="nearest-index">{index + 1}</span><span className="nearest-name">{stop.name}</span><span className="nearest-distance">{formatDistance(distance)}</span>
             </button>
           ))}
         </aside>
