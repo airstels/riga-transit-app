@@ -1115,3 +1115,23 @@ button:disabled { opacity: .65; cursor: wait; }
   .stop-sheet:not(.schedule-open) .schedule-next strong { font-size:15px; }
   .schedule-open .full-departure-list { grid-template-columns:repeat(4,minmax(0,1fr)); }
 }
+
+/* Profile 2.0 — clearer hierarchy, language selection and touch targets. */
+.profile-panel{width:min(100%,460px);padding:clamp(16px,4vw,22px);border-color:rgba(218,183,120,.3);background:radial-gradient(ellipse at 0% 0%,rgba(218,183,120,.12),transparent 42%),linear-gradient(155deg,rgba(27,36,45,.99),rgba(10,16,22,.995) 76%)}
+.profile-panel-top{align-items:flex-start}.profile-panel-top .panel-eyebrow{line-height:1.5}
+.profile-kicker{display:block;margin-top:4px;color:#71808b;font-size:8px;font-weight:750;letter-spacing:1.25px}
+.profile-identity{position:relative;margin:15px 0 17px;padding:16px;border-color:rgba(218,183,120,.22);background:linear-gradient(115deg,rgba(218,183,120,.13),rgba(255,255,255,.025) 75%)}
+.profile-avatar{width:58px;height:58px;flex-basis:58px;border-radius:18px}.profile-identity-copy{flex:1}.profile-identity-copy h2{font-size:19px}
+.profile-device-tag{display:inline-flex;margin-top:7px;padding:3px 7px;border:1px solid rgba(218,183,120,.18);border-radius:6px;color:#c8ad7c;background:rgba(218,183,120,.06);font-size:7px;font-weight:800;letter-spacing:.9px}
+.profile-name-edit{padding-bottom:15px}.profile-name-row input{height:44px}.profile-name-row button{min-width:86px}
+.profile-stats{gap:7px}.profile-stat{min-height:73px;border-color:rgba(218,183,120,.12);background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018))}.profile-stat strong{font-size:23px}
+.profile-links{gap:7px;margin-top:12px}.profile-links button{min-height:56px;padding:10px;transition:background .16s,border-color .16s,transform .16s}.profile-links button:active{transform:scale(.99);background:rgba(218,183,120,.07)}.profile-links button:disabled{opacity:.42}
+.profile-language-card{padding:12px;border:1px solid rgba(218,183,120,.18);border-radius:14px;background:linear-gradient(135deg,rgba(218,183,120,.075),rgba(255,255,255,.02))}
+.profile-language-copy{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}.profile-language-copy strong{color:#e6e9eb;font-size:10px;font-weight:700}.profile-language-copy small{color:#82909a;font-size:9px}
+.profile-language-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.profile-language-options button{display:flex;min-width:0;min-height:53px;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1px solid rgba(255,255,255,.085);border-radius:10px;color:#aab4bc;background:rgba(0,0,0,.17);cursor:pointer;transition:all .16s ease}
+.profile-language-options button span{font-size:12px;font-weight:850;letter-spacing:.4px}.profile-language-options button small{font-size:8px}
+.profile-language-options button.active{border-color:rgba(224,194,137,.62);color:#f1d9a9;background:linear-gradient(145deg,rgba(218,183,120,.2),rgba(218,183,120,.08));box-shadow:inset 0 1px rgba(255,255,255,.06),0 0 0 2px rgba(218,183,120,.055)}
+.profile-footnote{display:flex;align-items:flex-start;gap:8px;padding:11px;line-height:1.55}.profile-footnote>span{flex:0 0 auto;color:#c5a76f}
+.profile-preferences{gap:7px}.profile-preferences label{min-height:54px;padding:10px 12px}.profile-preferences input{width:19px;height:19px}
+@media(max-width:380px){.profile-panel{padding:14px;border-radius:20px}.profile-identity{padding:12px}.profile-avatar{width:50px;height:50px;flex-basis:50px}.profile-language-options{gap:5px}.profile-language-options button{min-height:49px}}
