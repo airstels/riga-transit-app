@@ -95,7 +95,7 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   routePatternLoading: { ru: '{t('routePatternLoading')}', lv: 'Ielādē maršrutu un pieturas…', en: 'Loading route and stops…' },
   routePatternError: { ru: '{t('routePatternError')}', lv: 'Neizdevās ielādēt maršruta shēmu. Mēģiniet vēlreiz.', en: 'Could not load route map. Please try again.' },
   routePatternMissing: { ru: '{t('routePatternMissing')}', lv: 'Publicētajos datos šim virzienam pieturu shēma nav atrasta.', en: 'No stop sequence was found for this direction in the published data.' },
-  routeDirection: { ru: t('routeDirection'), lv: 'Virziens', en: 'Direction' },
+  routeDirection: { ru: 'Направление', lv: 'Virziens', en: 'Direction' },
   reportsTitle: { ru: 'Сообщения сообщества', lv: 'Kopienas ziņojumi', en: 'Community reports' },
   localTwoHours: { ru: 'локально · актуально 2 часа', lv: 'lokāli · derīgi 2 stundas', en: 'local · valid for 2 hours' },
   noReports: { ru: 'Пока нет сообщений', lv: 'Pagaidām nav ziņojumu', en: 'No reports yet' },
