@@ -1,0 +1,10 @@
+{
+  "source": "Rīgas satiksme GTFS",
+  "sourceUrl": "https://data.gov.lv/dati/dataset/6d78358a-0095-4ce3-b119-6cde5d0ac54f/resource/8fd86705-c8ac-49bd-b1bf-db46064e0814/download/marsrutusaraksti09_2026.zip",
+  "importedAt": "2026-11-04",
+  "stopCount": 1643,
+  "routeCount": 79,
+  "tripCount": 12001,
+  "stopTimeCount": 299794,
+  "license": "CC0 1.0"
+}
