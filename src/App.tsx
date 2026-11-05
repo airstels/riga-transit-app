@@ -447,6 +447,7 @@ function App() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [quickReportOpen, setQuickReportOpen] = useState(false);
   const [quickStopQuery, setQuickStopQuery] = useState('');
+  const [quickReportStop, setQuickReportStop] = useState<Stop | null>(null);
   const [scheduleCompactOpen, setScheduleCompactOpen] = useState(true);
   const [reportType, setReportType] = useState<ReportType>('delay');
   const [reportScope, setReportScope] = useState<ReportScope>('stop');
@@ -723,15 +724,16 @@ function App() {
     persistReports(reports.map(item => item.id === report.id ? { ...item, confirmations: (item.confirmations ?? 0) + 1 } : item));
   };
 
-  const openQuickReport = () => { setQuickReportOpen(true); setQuickStopQuery(''); setReportScope('vehicle'); setReportType('delay'); setReportText(''); setReportRouteNumber(''); setReportVehicleNumber(''); };
+  const openQuickReport = () => { setQuickReportOpen(true); setQuickStopQuery(''); setQuickReportStop(null); setReportScope('vehicle'); setReportType('delay'); setReportText(''); setReportRouteNumber(''); setReportVehicleNumber(''); };
 
-  const addReport = () => {
-    if (!selectedStop) return;
+  const addReport = (stopOverride?: Stop) => {
+    const reportStop = stopOverride ?? selectedStop;
+    if (!reportStop) return;
     const now = Date.now();
     if (reportScope === 'vehicle' && !/^\d{4,5}$/.test(reportVehicleNumber.trim())) return;
     const report: Report = {
       id: `${now}-${Math.random().toString(36).slice(2, 8)}`,
-      stopId: selectedStop.id,
+      stopId: reportStop.id,
       type: reportType,
       scope: reportScope,
       routeNumber: reportScope === 'vehicle' && reportRouteNumber.trim() ? reportRouteNumber.trim().slice(0, 4) : undefined,
@@ -744,6 +746,8 @@ function App() {
     };
     persistReports([report, ...reports]);
     setShowAddForm(false);
+    setQuickReportOpen(false);
+    setQuickReportStop(null);
     setReportText('');
     setReportType('delay');
     setReportScope('stop');
@@ -906,31 +910,39 @@ function App() {
       {quickReportOpen && <div className="radar-composer-backdrop" onClick={() => setQuickReportOpen(false)}>
         <section className="radar-composer glass" role="dialog" aria-modal="true" aria-labelledby="radar-composer-title" onClick={event => event.stopPropagation()}>
           <div className="radar-composer-head"><div><div className="panel-eyebrow">COMMUNITY RADAR</div><h2 id="radar-composer-title">{t('quickReport')}</h2></div><button className="close-sheet" onClick={() => setQuickReportOpen(false)} aria-label={t('close')}>×</button></div>
-          <div className="radar-step"><span>1</span><label>{t('vehicleNumber')}</label></div>
-          <div className="radar-vehicle-fields"><label><span>{t('routeNumber')}</span><input value={reportRouteNumber} onChange={event => setReportRouteNumber(event.target.value.replace(/\D/g, '').slice(0, 3))} inputMode="numeric" placeholder="11" /></label><label><span>{t('vehicleNumber')}</span><input value={reportVehicleNumber} onChange={event => setReportVehicleNumber(event.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="12345" /></label></div>
-          <div className="radar-step"><span>2</span><label>{t('searchStop')}</label></div>
-          <input className="radar-stop-search" value={quickStopQuery} onChange={event => setQuickStopQuery(event.target.value)} placeholder={t('searchPlaceholder')} autoFocus />
-          <div className="radar-stop-results">
-            {(quickStopQuery.trim()
-              ? activeStops.filter(stop =>
-                  stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode)) ||
-                  stop.routes?.some(route => route.includes(quickStopQuery.trim()))
-                ).slice(0, 6)
-              : []
-            ).map(stop => (
-              <button key={stop.id} onClick={() => {
-                selectStop(stop);
-                setQuickReportOpen(false);
-                setShowAddForm(true);
-                setReportScope('vehicle');
-              }}>
-                <span className="result-pin">●</span>
-                <span><strong>{stop.name}</strong><small>{stop.routes?.length ? '№ ' + stop.routes.join(' · ') : t('stopSingular')}</small></span>
-                <b>↗</b>
-              </button>
-            ))}
-            {quickStopQuery.trim() && !activeStops.some(stop => stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode)) || stop.routes?.some(route => route.includes(quickStopQuery.trim()))) && <small>{t('nothingFound')}</small>}
-          </div>
+          <div className="radar-step"><span>1</span><label>{t('searchStop')}</label></div>
+          {!quickReportStop ? <>
+            <input className="radar-stop-search" value={quickStopQuery} onChange={event => setQuickStopQuery(event.target.value)} placeholder={t('searchPlaceholder')} autoFocus />
+            <div className="radar-stop-results">
+              {(quickStopQuery.trim()
+                ? activeStops.filter(stop =>
+                    stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode)) ||
+                    stop.routes?.some(route => route.includes(quickStopQuery.trim()))
+                  ).slice(0, 6)
+                : []
+              ).map(stop => (
+                <button key={stop.id} onClick={() => { setQuickReportStop(stop); selectStop(stop); }}>
+                  <span className="result-pin">●</span>
+                  <span><strong>{stop.name}</strong><small>{stop.routes?.length ? '№ ' + stop.routes.join(' · ') : t('stopSingular')}</small></span>
+                  <b>↗</b>
+                </button>
+              ))}
+              {quickStopQuery.trim() && !activeStops.some(stop => stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode)) || stop.routes?.some(route => route.includes(quickStopQuery.trim()))) && <small>{t('nothingFound')}</small>}
+            </div>
+          </> : <div className="radar-selected-stop"><strong>{quickReportStop.name}</strong><button onClick={() => setQuickReportStop(null)}>{t('searchStop')}</button></div>}
+          {quickReportStop && <>
+            <div className="radar-step"><span>2</span><label>{t('whatHappens')}</label></div>
+            <div className="radar-scope-switch">
+              <button className={reportScope === 'stop' ? 'active' : ''} onClick={() => setReportScope('stop')}>{t('radarStops')}</button>
+              <button className={reportScope === 'vehicle' ? 'active' : ''} onClick={() => setReportScope('vehicle')}>{t('radarVehicles')}</button>
+            </div>
+            {reportScope === 'vehicle' && <div className="radar-vehicle-fields"><label><span>{t('routeNumber')}</span><input value={reportRouteNumber} onChange={event => setReportRouteNumber(event.target.value.replace(/\D/g, '').slice(0, 3))} inputMode="numeric" placeholder="11" /></label><label><span>{t('vehicleNumber')}</span><input value={reportVehicleNumber} onChange={event => setReportVehicleNumber(event.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="12345" /></label></div>}
+            <div className="report-type-grid">
+              {REPORT_TYPES.map(type => <button key={type.id} onClick={() => setReportType(type.id)} className={`report-type ${reportType === type.id ? 'selected' : ''}`}><i style={{ background: type.dot }} />{reportTypeLabel(type.id, language)}</button>)}
+            </div>
+            <input className="comment-input" value={reportText} maxLength={160} onChange={event => setReportText(event.target.value)} placeholder={t('commentPlaceholder')} />
+            <div className="form-footer"><span>{reportText.length}/160</span><button className="primary-button compact" onClick={() => addReport(quickReportStop)} disabled={reportScope === 'vehicle' && !/^\d{4,5}$/.test(reportVehicleNumber.trim())}>{t('publish')}</button></div>
+          </>}
           <div className="radar-composer-note">{t('radarComposerHint')}</div>
         </section>
       </div>}
