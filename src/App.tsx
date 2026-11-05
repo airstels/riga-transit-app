@@ -1026,129 +1026,31 @@ function App() {
                 </div>
               )}
               <div className="schedule-panel">
-                <div className="schedule-panel-top">
-                  <button className="schedule-compact-toggle" onClick={() => setScheduleCompactOpen(value => !value)} aria-expanded={scheduleCompactOpen}><span>{t('departures')}</span><small>{scheduleCompactOpen ? '⌃' : '⌄'}</small></button>
-                  <div>
-                    <div className="schedule-heading"><span>{t('departures')}</span><small>{t('officialSchedule')}</small></div>
-                    <div className="schedule-subtitle">{t('nearestDepartures')}</div>
-                  </div>
-                  <span className="schedule-live-dot" aria-label={t('officialSchedule')} />
-                </div>
-                <div className={scheduleCompactOpen ? "schedule-expanded-content is-collapsed" : "schedule-expanded-content"}>
-                <div className="schedule-filter" role="group" aria-label={t('all')}>
-                  {[{id:'all',label:t('all')}, {id:'3',label:t('buses')}, {id:'11',label:t('trolleybuses')}, {id:'0',label:t('trams')}].map(filter => (
-                    <button key={filter.id} className={scheduleTransportFilter === filter.id ? 'active' : ''} onClick={() => setScheduleTransportFilter(filter.id)}>{filter.label}</button>
-                  ))}
-                </div>
-                {!scheduleViewOpen && <div className="schedule-open-row">
-                  <div><strong>{t('fullDay')}</strong><small>{t('allTrips')}</small></div>
-                  <button onClick={() => { setScheduleCompactOpen(false); setScheduleDateOffset(0); setScheduleSearch(''); setSelectedRouteDetail(null); setScheduleViewOpen(true); }}>{t('open')} <span>↗</span></button>
-                </div>}
-                {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />{t('loadingSchedule')}</div>}
-                {scheduleStatus === 'error' && <div className="schedule-state">{t('scheduleError')}</div>}
-                {scheduleStatus === 'empty' && <div className="schedule-state">{t('noDepartures')}</div>}
-                {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-state">{t('calendarLoading')}</div>}
-                {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">{t('calendarError')}</div>}
-                {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleDepartures.length === 0 && <div className="schedule-state">{upcomingDepartures.length ? t('noSelectedType') : t('noUpcoming')}</div>}
-                {visibleDepartures.map(group => {
-                  const first = group.departures[0];
-                  const expanded = expandedScheduleRoutes.includes(group.key);
-                  const shown = expanded ? group.departures : group.departures.slice(0, 3);
-                  const minutes = first ? minutesUntil(first, scheduleClock) : 0;
-                  return (
-                    <article className="schedule-route-card" key={group.key}>
+                <button className="schedule-compact-toggle" onClick={() => setScheduleCompactOpen(value => !value)} aria-expanded={!scheduleCompactOpen}>
+                  <span>{t('departures')} · {t('officialSchedule')}</span>
+                  <small>{scheduleCompactOpen ? '⌄' : '⌃'}</small>
+                </button>
+                {!scheduleCompactOpen && <div className="schedule-expanded-content">
+                  {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />{t('loadingSchedule')}</div>}
+                  {scheduleStatus === 'error' && <div className="schedule-state">{t('scheduleError')}</div>}
+                  {scheduleStatus === 'empty' && <div className="schedule-state">{t('noDepartures')}</div>}
+                  {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-state">{t('calendarLoading')}</div>}
+                  {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">{t('calendarError')}</div>}
+                  {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleDepartures.length === 0 && <div className="schedule-state">{t('noUpcoming')}</div>}
+                  {visibleDepartures.slice(0, 3).map(group => {
+                    const first = group.departures[0];
+                    const minutes = first ? minutesUntil(first, scheduleClock) : 0;
+                    return <article className="schedule-route-card" key={group.key}>
                       <div className="schedule-card-head">
                         <span className={'schedule-vehicle-icon type-' + group.routeType}>{transportIcon(group.routeType)}</span>
                         <span className="schedule-route-number">{group.route}</span>
-                        <span className="schedule-route-copy"><strong>{group.headsign || group.routeName || t('directionUnknown')}</strong><small>{transportType(group.routeType, language)}{group.routeName ? ' · ' + group.routeName : ''}</small></span>
-                        <span className="schedule-next">
-                          <strong>{first ? first.toLocaleTimeString(localeCode, {hour:'2-digit', minute:'2-digit'}) : '—'}</strong>
-                          <small>{first ? departureDayLabel(first, scheduleClock, language) + ' · ' : ''}{formatRelativeMinutes(minutes, language)}</small>
-                        </span>
+                        <span className="schedule-route-copy"><strong>{group.headsign || group.routeName || t('directionUnknown')}</strong><small>{transportType(group.routeType, language)}</small></span>
+                        <span className="schedule-next"><strong>{first ? first.toLocaleTimeString(localeCode, { hour: '2-digit', minute: '2-digit' }) : '—'}</strong><small>{first ? formatRelativeMinutes(minutes, language) : ''}</small></span>
                       </div>
-                      <div className="schedule-times">
-                        {shown.map((departure, index) => <span className={index === 0 ? 'schedule-time next' : 'schedule-time'} key={departure.toISOString()}>
-                          <strong>{formatDeparture(departure, scheduleClock, localeCode, language)}</strong>
-                          {index === 0 && <small>{formatRelativeMinutes(minutes, language)}</small>}
-                        </span>)}
-                      </div>
-                      <div className="schedule-card-actions">
-                        {group.departures.length > 3 && <button className="schedule-expand" onClick={() => setExpandedScheduleRoutes(current => expanded ? current.filter(key => key !== group.key) : [...current, group.key])}>
-                          {expanded ? t('collapse') : t('moreTrips') + ' ' + (group.departures.length - 3) + ' ' + (language === 'ru' ? 'рейсов' : language === 'lv' ? 'reisi' : 'departures')} <span>{expanded ? '⌃' : '⌄'}</span>
-                        </button>}
-                        <button className="schedule-route-detail-link" onClick={() => { setScheduleCompactOpen(false); setScheduleDateOffset(0); setSelectedRouteDetail(group); setScheduleViewOpen(true); }}>{t('route')} <span>↗</span></button>
-                      </div>
-                    </article>
-                  );
-                })}
-
-                {scheduleViewOpen && <div className="full-schedule-view">
-                  <div className="full-schedule-toolbar">
-                    <div><strong>{t('fullSchedule')}</strong><small>{selectedStop.name} · {t('allDepartures')}</small></div>
-                    <button onClick={() => { setScheduleViewOpen(false); setSelectedRouteDetail(null); setScheduleSearch(''); }} aria-label={t('close')}>×</button>
-                  </div>
-                  {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />{t('scheduleLoadingFull')}</div>}
-                  {scheduleStatus === 'error' && <div className="schedule-state">{t('scheduleRetry')}</div>}
-                  {scheduleStatus === 'ready' && calendarStatus === 'loading' && <div className="schedule-state">{t('calendarLoading')}</div>}
-                  {scheduleStatus === 'ready' && calendarStatus === 'error' && <div className="schedule-state">{t('calendarError')}</div>}
-                  <label className="schedule-search">
-                    <span>⌕</span>
-                    <input value={scheduleSearch} onChange={event => setScheduleSearch(event.target.value)} placeholder={t('routeSearch')} aria-label={t('routeSearchLabel')} />
-                    {scheduleSearch && <button onClick={() => setScheduleSearch('')} aria-label={t('clearSearch')}>×</button>}
-                  </label>
-                  <div className="schedule-results-count">{visibleFullDayDepartures.length} {visibleFullDayDepartures.length === 1 ? t('routeDirection') : t('directionCount')} · {visibleFullDayDepartures.reduce((sum, group) => sum + group.departures.length, 0)} {t('departureCount')}</div>
-                  <div className="schedule-date-tabs" role="group" aria-label={t('dateLabel')}>
-                    <button className={scheduleDateOffset === 0 ? 'active' : ''} onClick={() => setScheduleDateOffset(0)}>{t('today')}</button>
-                    <button className={scheduleDateOffset === 1 ? 'active' : ''} onClick={() => setScheduleDateOffset(1)}>{t('tomorrow')}</button>
-                    <span>{selectedScheduleDate.toLocaleDateString(localeCode, { day: 'numeric', month: 'long', weekday: 'short' })}</span>
-                  </div>
-                  {scheduleStatus === 'ready' && calendarStatus === 'ready' && visibleFullDayDepartures.length === 0 && <div className="schedule-state">{t('noTodayTrips')}</div>}
-                  {selectedRouteDetail ? (
-                    <section className="route-detail-view">
-                      <button className="route-detail-back" onClick={() => setSelectedRouteDetail(null)}>{t('allRoutes')}</button>
-                      <div className="route-detail-title">
-                        <span className={'schedule-vehicle-icon type-' + selectedRouteDetail.routeType}>{transportIcon(selectedRouteDetail.routeType)}</span>
-                        <span className="schedule-route-number">{selectedRouteDetail.route}</span>
-                        <span><strong>{selectedRouteDetail.headsign || selectedRouteDetail.routeName}</strong><small>{transportType(selectedRouteDetail.routeType, language)} · {selectedRouteDetail.headsign || t('routeDirection')}</small></span>
-                      </div>
-                      <div className="route-detail-caption">{t('routeStops')}</div>
-                      {routePatternsStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />{t('routePatternLoading')}</div>}
-                      {routePatternsStatus === 'error' && <div className="schedule-state">{t('routePatternError')}</div>}
-                      {routePatternsStatus === 'ready' && (() => {
-                        const pattern = routePatterns?.find(item => item.route === selectedRouteDetail.route && item.headsign === selectedRouteDetail.headsign && item.directionId === selectedRouteDetail.directionId);
-                        if (!pattern) return <div className="schedule-state">{t('routePatternMissing')}</div>;
-                        return <ol className="route-stop-list">
-                          {pattern.stops.map((item, index) => {
-                            const stop = activeStops.find(candidate => candidate.id === item.stopId);
-                            const isCurrent = item.stopId === selectedStop.id;
-                            return <li className={isCurrent ? 'current' : ''} key={item.stopId + '-' + item.sequence}>
-                              <span className="route-stop-marker">{index + 1}</span>
-                              <span className="route-stop-name">{stop?.name || t('stopPrefix') + ' ' + item.stopId}{isCurrent && <small>{t('youAreHere')}</small>}</span>
-                            </li>;
-                          })}
-                        </ol>;
-                      })()}
-                    </section>
-                  ) : visibleFullDayDepartures.map(group => <article className="full-route-group" key={group.key}>
-                    <button className="full-route-heading route-open-button" onClick={() => setSelectedRouteDetail(group)} aria-label={t('routeOpen') + ' ' + group.route + ', ' + group.headsign}>
-                      <span className={'schedule-vehicle-icon type-' + group.routeType}>{transportIcon(group.routeType)}</span>
-                      <span className="schedule-route-number">{group.route}</span>
-                      <span className="full-route-copy"><strong>{group.headsign || group.routeName || t('directionUnknown')}</strong><small>{transportType(group.routeType, language)} · {group.departures.length} {language === 'ru' ? 'рейсов' : language === 'lv' ? 'reisi' : 'trips'}</small></span>
-                      <span className="route-open-chevron">›</span>
-                    </button>
-                    <div className="full-departure-list">
-                      {group.departures.map(departure => {
-                        const passed = departure.getTime() < scheduleClock;
-                        const isNext = !passed && !group.departures.some(item => item.getTime() >= scheduleClock && item.getTime() < departure.getTime());
-                        return <div className={passed ? 'full-departure passed' : isNext ? 'full-departure next' : 'full-departure'} key={departure.toISOString()}>
-                          <strong>{departure.toLocaleTimeString(localeCode, { hour: '2-digit', minute: '2-digit' })}</strong>
-                          <small>{passed ? t('passed') : isNext ? t('nextDeparture') : t('scheduled')}</small>
-                        </div>;
-                      })}
-                    </div>
-                  </article>)}
-                </div>
-                <div className="schedule-footnote"><span>ⓘ</span> {t('plannedTimes')}</div>
+                    </article>;
+                  })}
+                  <div className="schedule-footnote"><span>ⓘ</span> {t('plannedTimes')}</div>
+                </div>}
               </div>
             </div>
             <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? t('removeFavorite') : t('addFavorite')} title={favoriteIds.includes(selectedStop.id) ? t('removeFavorite') : t('addFavorite')}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setSelectedRouteDetail(null); setScheduleViewOpen(false); setShowAddForm(false); }} aria-label={t('close')}>×</button></div>
