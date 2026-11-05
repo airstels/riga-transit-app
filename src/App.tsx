@@ -1034,7 +1034,7 @@ function App() {
                   </div>
                   <span className="schedule-live-dot" aria-label={t('officialSchedule')} />
                 </div>
-                {!scheduleCompactOpen && <div className="schedule-expanded-content">
+                <div className={scheduleCompactOpen ? "schedule-expanded-content is-collapsed" : "schedule-expanded-content"}>
                 <div className="schedule-filter" role="group" aria-label={t('all')}>
                   {[{id:'all',label:t('all')}, {id:'3',label:t('buses')}, {id:'11',label:t('trolleybuses')}, {id:'0',label:t('trams')}].map(filter => (
                     <button key={filter.id} className={scheduleTransportFilter === filter.id ? 'active' : ''} onClick={() => setScheduleTransportFilter(filter.id)}>{filter.label}</button>
@@ -1147,7 +1147,7 @@ function App() {
                       })}
                     </div>
                   </article>)}
-                </div>}
+                </div>
                 <div className="schedule-footnote"><span>ⓘ</span> {t('plannedTimes')}</div>
               </div>
             </div>
