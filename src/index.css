@@ -1198,3 +1198,5 @@ button:disabled { opacity: .65; cursor: wait; }
 .schedule-panel .schedule-footnote{margin-top:6px!important;font-size:9px!important}
 .stop-sheet{z-index:1200}
 @media(max-width:430px){.radar-composer-backdrop{padding:8px}.radar-composer{padding:16px;border-radius:20px 20px 14px 14px}.radar-add-main{min-height:42px;padding:0 13px}.schedule-panel .schedule-route-card{padding:7px!important}}
+
+.schedule-expanded-content.is-collapsed{display:none}
