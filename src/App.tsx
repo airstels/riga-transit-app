@@ -676,6 +676,20 @@ function App() {
   }, [fullDayDepartures, scheduleTransportFilter, scheduleSearch]);
 
 
+  const activeReports = useMemo(() => reports.filter(report => report.createdAt !== undefined && scheduleClock - report.createdAt < REPORT_TTL_MS), [reports, scheduleClock]);
+  const radarStopGroups = useMemo(() => {
+    const groups = new Map<string, Report[]>();
+    activeReports.filter(report => radarFilter === 'all' || report.scope === radarFilter).forEach(report => {
+      const list = groups.get(report.stopId) ?? [];
+      list.push(report);
+      groups.set(report.stopId, list);
+    });
+    return Array.from(groups.entries()).map(([stopId, items]) => ({
+      stop: activeStops.find(stop => stop.id === stopId),
+      reports: items.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)),
+    })).filter((item): item is { stop: Stop; reports: Report[] } => Boolean(item.stop));
+  }, [activeReports, radarFilter]);
+
   const selectedReports = useMemo(() => selectedStop
     ? activeReports.filter(report => report.stopId === selectedStop.id && (radarFilter === 'all' || report.scope === radarFilter)).sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8)
     : [], [activeReports, selectedStop, radarFilter]);
