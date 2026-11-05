@@ -135,6 +135,25 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   allowGeo: { ru: 'Разреши доступ к геолокации в настройках браузера', lv: 'Atļauj piekļuvi atrašanās vietai pārlūka iestatījumos', en: 'Allow location access in your browser settings' },
   geoTimeout: { ru: 'Не удалось определить местоположение вовремя', lv: 'Neizdevās laikus noteikt atrašanās vietu', en: 'Location request timed out' },
   geoUnavailable: { ru: 'Местоположение временно недоступно', lv: 'Atrašanās vieta īslaicīgi nav pieejama', en: 'Location is temporarily unavailable' },
+  radarExpires: { ru: 'ДЕЙСТВУЕТ 1 ЧАС', lv: 'DERĪGS 1 STUNDU', en: 'ACTIVE FOR 1 HOUR' },
+  radarFilter: { ru: 'Фильтр сообщений Radar', lv: 'Radar ziņojumu filtrs', en: 'Radar report filter' },
+  radarStops: { ru: 'Остановки', lv: 'Pieturas', en: 'Stops' },
+  radarVehicles: { ru: 'Транспорт', lv: 'Transports', en: 'Vehicles' },
+  routeNumber: { ru: 'Номер маршрута', lv: 'Maršruta numurs', en: 'Route number' },
+  vehicleNumber: { ru: 'Бортовой номер', lv: 'Transportlīdzekļa numurs', en: 'Vehicle fleet number' },
+  radarScopeStop: { ru: 'Сообщение об остановке', lv: 'Ziņojums par pieturu', en: 'Stop report' },
+  radarScopeVehicle: { ru: 'Сообщение о транспорте', lv: 'Ziņojums par transportu', en: 'Vehicle report' },
+  radarIntro: { ru: 'Отметьте состояние остановки или транспортного средства. Сообщение автоматически исчезнет через час.', lv: 'Ziņojiet par pieturas vai transportlīdzekļa stāvokli. Ziņojums pazudīs pēc stundas.', en: 'Report a stop or vehicle condition. Reports automatically expire after one hour.' },
+  confirmReport: { ru: 'Подтверждаю', lv: 'Apstiprinu', en: 'Confirm' },
+  confirmed: { ru: 'Подтверждено', lv: 'Apstiprināts', en: 'Confirmed' },
+  noReportsFiltered: { ru: 'Нет сообщений по выбранному фильтру', lv: 'Nav ziņojumu izvēlētajā filtrā', en: 'No reports for this filter' },
+  radarLocalOnly: { ru: 'Пока сообщения хранятся только на этом устройстве. Общая карта для всех пользователей появится после подключения серверной синхронизации.', lv: 'Pašlaik ziņojumi tiek glabāti tikai šajā ierīcē. Kopīga karte būs pieejama pēc servera sinhronizācijas pieslēgšanas.', en: 'Reports are currently stored on this device only. Shared reports will require server-side sync.' },
+  radarMapLabel: { ru: 'Сообщения на карте', lv: 'Ziņojumi kartē', en: 'Reports on map' },
+  reportDelay: { ru: 'Задержка', lv: 'Kavēšanās', en: 'Delay' },
+  reportCrowded: { ru: 'Переполненность', lv: 'Pārpildīts', en: 'Crowded' },
+  reportDisruption: { ru: 'Сбой движения', lv: 'Kustības traucējumi', en: 'Service disruption' },
+  reportCleanliness: { ru: 'Чистота', lv: 'Tīrība', en: 'Cleanliness' },
+  reportAccessibility: { ru: 'Доступность', lv: 'Pieejamība', en: 'Accessibility' },
   transportFilter: { ru: 'Фильтр транспорта', lv: 'Transporta filtrs', en: 'Transport filter' },
   stopPrefix: { ru: 'Остановка', lv: 'Pietura', en: 'Stop' },
   officialDataNote: { ru: 'Официальные данные Rīgas satiksme', lv: 'Rīgas satiksme oficiālie dati', en: 'Official Rīgas satiksme data' },
@@ -143,15 +162,20 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   scheduled: { ru: 'По расписанию', lv: 'Pēc saraksta', en: 'Scheduled' },
 };
 
-type ReportType = 'check' | 'crowded' | 'delay' | 'empty' | 'other';
+type ReportType = 'delay' | 'crowded' | 'disruption' | 'cleanliness' | 'accessibility';
+type ReportScope = 'stop' | 'vehicle';
 interface Report {
   id: string;
   stopId: string;
   type: ReportType;
+  scope: ReportScope;
+  routeNumber?: string;
+  vehicleNumber?: string;
   text: string;
   time: string;
   createdAt?: number;
   user?: string;
+  confirmations?: number;
 }
 interface Coordinates { lat: number; lon: number; accuracy?: number }
 type TimetableEntry = [string, string, string, string, string, string, string];
@@ -232,11 +256,11 @@ function buildDeparturesForDate(entries: TimetableEntry[], calendar: CalendarSer
 
 function reportTypeLabel(type: ReportType, language: AppLanguage): string {
   const labels: Record<ReportType, Record<AppLanguage, string>> = {
-    check: { ru: 'Проверка', lv: 'Pārbaude', en: 'Check' },
-    crowded: { ru: 'Переполнен', lv: 'Pārpildīts', en: 'Crowded' },
     delay: { ru: 'Задержка', lv: 'Kavēšanās', en: 'Delay' },
-    empty: { ru: 'Свободно', lv: 'Brīvs', en: 'Not crowded' },
-    other: { ru: 'Другое', lv: 'Cits', en: 'Other' },
+    crowded: { ru: 'Переполненность', lv: 'Pārpildīts', en: 'Crowded' },
+    disruption: { ru: 'Сбой движения', lv: 'Kustības traucējumi', en: 'Service disruption' },
+    cleanliness: { ru: 'Чистота', lv: 'Tīrība', en: 'Cleanliness' },
+    accessibility: { ru: 'Доступность', lv: 'Pieejamība', en: 'Accessibility' },
   };
   return labels[type][language];
 }
@@ -304,13 +328,13 @@ const STORAGE_KEY = 'riga-reports';
 const FAVORITES_KEY = 'riga-favorite-stops';
 const RECENT_KEY = 'riga-recent-stops';
 const MAX_REPORTS = 100;
-const REPORT_TTL_MS = 2 * 60 * 60 * 1000;
+const REPORT_TTL_MS = 60 * 60 * 1000;
 const REPORT_TYPES: { id: ReportType; label: string; color: string; dot: string }[] = [
-  { id: 'check', label: 'Проверка', color: 'bg-red-500/20 text-red-300', dot: '#ef4444' },
-  { id: 'crowded', label: 'Переполнен', color: 'bg-orange-500/20 text-orange-300', dot: '#f97316' },
   { id: 'delay', label: 'Задержка', color: 'bg-yellow-500/20 text-yellow-300', dot: '#eab308' },
-  { id: 'empty', label: 'Свободно', color: 'bg-emerald-500/20 text-emerald-300', dot: '#10b981' },
-  { id: 'other', label: 'Другое', color: 'bg-sky-500/20 text-sky-300', dot: '#38bdf8' },
+  { id: 'crowded', label: 'Переполненность', color: 'bg-orange-500/20 text-orange-300', dot: '#f97316' },
+  { id: 'disruption', label: 'Сбой движения', color: 'bg-red-500/20 text-red-300', dot: '#ef4444' },
+  { id: 'cleanliness', label: 'Чистота', color: 'bg-sky-500/20 text-sky-300', dot: '#38bdf8' },
+  { id: 'accessibility', label: 'Доступность', color: 'bg-emerald-500/20 text-emerald-300', dot: '#10b981' },
 ];
 function isReport(value: unknown): value is Report {
   if (!value || typeof value !== 'object') return false;
@@ -318,10 +342,14 @@ function isReport(value: unknown): value is Report {
   return typeof item.id === 'string' &&
     typeof item.stopId === 'string' &&
     REPORT_TYPES.some(type => type.id === item.type) &&
+    (item.scope === 'stop' || item.scope === 'vehicle') &&
+    (item.routeNumber === undefined || typeof item.routeNumber === 'string') &&
+    (item.vehicleNumber === undefined || typeof item.vehicleNumber === 'string') &&
     typeof item.text === 'string' &&
     typeof item.time === 'string' &&
     (item.createdAt === undefined || typeof item.createdAt === 'number') &&
-    (item.user === undefined || typeof item.user === 'string');
+    (item.user === undefined || typeof item.user === 'string') &&
+    (item.confirmations === undefined || typeof item.confirmations === 'number');
 }
 
 function distanceKm(a: Coordinates, b: Coordinates): number {
@@ -456,8 +484,13 @@ function App() {
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [reportType, setReportType] = useState<ReportType>('check');
+  const [reportType, setReportType] = useState<ReportType>('delay');
+  const [reportScope, setReportScope] = useState<ReportScope>('stop');
+  const [reportRouteNumber, setReportRouteNumber] = useState('');
+  const [reportVehicleNumber, setReportVehicleNumber] = useState('');
   const [reportText, setReportText] = useState('');
+  const [radarFilter, setRadarFilter] = useState<'all' | 'stop' | 'vehicle'>('all');
+  const [confirmedReportIds, setConfirmedReportIds] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [user, setUser] = useState<TelegramUser | null>(null);
@@ -586,6 +619,8 @@ function App() {
       console.warn('Не удалось прочитать избранные остановки', error);
     }
     try {
+      const rawConfirmed = JSON.parse(localStorage.getItem('riga-confirmed-reports') ?? '[]');
+      if (Array.isArray(rawConfirmed)) setConfirmedReportIds(rawConfirmed.filter((id): id is string => typeof id === 'string'));
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
@@ -724,22 +759,38 @@ function App() {
     );
   };
 
+  const confirmReport = (report: Report) => {
+    if (confirmedReportIds.includes(report.id)) return;
+    const nextConfirmed = [...confirmedReportIds, report.id];
+    setConfirmedReportIds(nextConfirmed);
+    try { localStorage.setItem('riga-confirmed-reports', JSON.stringify(nextConfirmed.slice(-300))); } catch (error) { console.warn('Could not save report confirmation', error); }
+    persistReports(reports.map(item => item.id === report.id ? { ...item, confirmations: (item.confirmations ?? 0) + 1 } : item));
+  };
+
   const addReport = () => {
     if (!selectedStop) return;
     const now = Date.now();
+    if (reportScope === 'vehicle' && (!/^\d{4,5}$/.test(reportVehicleNumber.trim()) || !reportRouteNumber.trim())) return;
     const report: Report = {
       id: `${now}-${Math.random().toString(36).slice(2, 8)}`,
       stopId: selectedStop.id,
       type: reportType,
+      scope: reportScope,
+      routeNumber: reportScope === 'vehicle' ? reportRouteNumber.trim().slice(0, 4) : undefined,
+      vehicleNumber: reportScope === 'vehicle' ? reportVehicleNumber.trim() : undefined,
       text: reportText.trim().slice(0, 160),
       time: new Date(now).toLocaleString(localeCode, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
       createdAt: now,
       user: user?.first_name ? [user.first_name, user.last_name].filter(Boolean).join(' ') : t('anonymous'),
+      confirmations: 0,
     };
     persistReports([report, ...reports]);
     setShowAddForm(false);
     setReportText('');
-    setReportType('check');
+    setReportType('delay');
+    setReportScope('stop');
+    setReportRouteNumber('');
+    setReportVehicleNumber('');
   };
 
   return (
@@ -754,6 +805,15 @@ function App() {
         <MapZoomControl language={language} />
         <MapFocus target={mapTarget} />
         {showStopMarkers && <StopLayer stops={activeStops} selectedStop={selectedStop} onSelect={selectStop} />}
+        {radarStopGroups.map(({ stop, reports: stopReports }) => {
+          const latest = stopReports[0];
+          const type = REPORT_TYPES.find(item => item.id === latest.type);
+          return <CircleMarker key={stop.id} center={[stop.lat, stop.lon]} radius={Math.min(13 + stopReports.length * 1.5, 20)}
+            pathOptions={{ color: type?.dot ?? '#d9b979', fillColor: type?.dot ?? '#d9b979', fillOpacity: 0.82, weight: 2, className: 'radar-pulse-marker' }}
+            eventHandlers={{ click: () => selectStop(stop) }}>
+            <></>
+          </CircleMarker>;
+        })}
         {position && <>
           <Circle center={[position.lat, position.lon]} radius={position.accuracy ?? 30}
             pathOptions={{ color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.09, weight: 1 }} />
@@ -1033,7 +1093,10 @@ function App() {
             <div className="sheet-actions"><button className={"favorite-toggle " + (favoriteIds.includes(selectedStop.id) ? "is-favorite" : "")} onClick={() => toggleFavorite(selectedStop)} aria-label={favoriteIds.includes(selectedStop.id) ? t('removeFavorite') : t('addFavorite')} title={favoriteIds.includes(selectedStop.id) ? t('removeFavorite') : t('addFavorite')}>{favoriteIds.includes(selectedStop.id) ? "★" : "☆"}</button><button className="close-sheet" onClick={() => { setSelectedStop(null); setSelectedRouteDetail(null); setScheduleViewOpen(false); setShowAddForm(false); }} aria-label={t('close')}>×</button></div>
           </div>
 
-          <div className="reports-heading"><span>{t('reportsTitle')}</span><span className="local-label">{t('localTwoHours')}</span></div>
+          <div className="reports-heading"><span>{t('reportsTitle')}</span><span className="local-label">{t('radarExpires')}</span></div>
+          <div className="radar-filter" role="group" aria-label={t('radarFilter')}>
+            {([{id:'all',label:t('all')},{id:'stop',label:t('radarStops')},{id:'vehicle',label:t('radarVehicles')}] as const).map(item => <button key={item.id} className={radarFilter === item.id ? 'active' : ''} onClick={() => setRadarFilter(item.id)}>{item.label}</button>)}
+          </div>
           <div className="reports-list">
             {selectedReports.length === 0 ? (
               <div className="empty-reports"><span>◌</span><p>{t('noReports')}</p><small>{t('addFirstReport')}</small></div>
@@ -1041,8 +1104,9 @@ function App() {
               const type = REPORT_TYPES.find(item => item.id === report.type);
               return <article className="report-card" key={report.id}>
                 <div className="report-meta"><span className={`report-tag ${type?.color ?? ''}`}>{type ? reportTypeLabel(type.id, language) : t('other')}</span><time>{report.time}</time></div>
+                {report.scope === 'vehicle' && <div className="radar-vehicle-line"><strong>№ {report.routeNumber}</strong><span>{t('vehicleNumber')} {report.vehicleNumber}</span></div>}
                 {report.text && <p>{report.text}</p>}
-                <small>{report.user ?? t('anonymous')}</small>
+                <div className="radar-report-footer"><small>{report.user ?? t('anonymous')} · {Math.max(0, Math.ceil((REPORT_TTL_MS - (scheduleClock - (report.createdAt ?? scheduleClock))) / 60000))} {t('minutesShort')}</small><button disabled={confirmedReportIds.includes(report.id)} onClick={() => confirmReport(report)}>{confirmedReportIds.includes(report.id) ? t('confirmed') : t('confirmReport')} · {report.confirmations ?? 0}</button></div>
               </article>;
             })}
           </div>
@@ -1052,11 +1116,19 @@ function App() {
           ) : (
             <div className="report-form">
               <div className="form-title">{t('whatHappens')}</div>
+              <div className="radar-scope-switch">
+                <button className={reportScope === 'stop' ? 'active' : ''} onClick={() => setReportScope('stop')}>{t('radarStops')}</button>
+                <button className={reportScope === 'vehicle' ? 'active' : ''} onClick={() => setReportScope('vehicle')}>{t('radarVehicles')}</button>
+              </div>
+              {reportScope === 'vehicle' && <div className="radar-vehicle-fields">
+                <label><span>{t('routeNumber')}</span><input value={reportRouteNumber} onChange={event => setReportRouteNumber(event.target.value.replace(/\D/g, '').slice(0, 3))} inputMode="numeric" maxLength={3} placeholder="Например, 11" /></label>
+                <label><span>{t('vehicleNumber')}</span><input value={reportVehicleNumber} onChange={event => setReportVehicleNumber(event.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" maxLength={5} placeholder="12345" /></label>
+              </div>}
               <div className="report-type-grid">
                 {REPORT_TYPES.map(type => (
                   <button key={type.id} onClick={() => setReportType(type.id)}
                     className={`report-type ${reportType === type.id ? 'selected' : ''}`}>
-                    <i style={{ background: type.dot }} />{type.label}
+                    <i style={{ background: type.dot }} />{reportTypeLabel(type.id, language)}
                   </button>
                 ))}
               </div>
@@ -1064,7 +1136,7 @@ function App() {
                 onChange={event => setReportText(event.target.value)} placeholder={t('commentPlaceholder')} />
               <div className="form-footer"><span>{reportText.length}/160</span>
                 <button className="secondary-button" onClick={() => setShowAddForm(false)}>{t('cancel')}</button>
-                <button className="primary-button compact" onClick={addReport}>{t('publish')}</button>
+                <button className="primary-button compact" onClick={addReport} disabled={reportScope === 'vehicle' && (!/^\d{4,5}$/.test(reportVehicleNumber.trim()) || !reportRouteNumber.trim())}>{t('publish')}</button>
               </div>
             </div>
           )}
