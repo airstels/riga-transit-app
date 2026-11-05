@@ -799,7 +799,7 @@ function App() {
       stopId: selectedStop.id,
       type: reportType,
       scope: reportScope,
-      routeNumber: reportScope === 'vehicle' ? reportRouteNumber.trim().slice(0, 4) : undefined,
+      routeNumber: reportScope === 'vehicle' && reportRouteNumber.trim() ? reportRouteNumber.trim().slice(0, 4) : undefined,
       vehicleNumber: reportScope === 'vehicle' ? reportVehicleNumber.trim() : undefined,
       text: reportText.trim().slice(0, 160),
       time: new Date(now).toLocaleString(localeCode, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
