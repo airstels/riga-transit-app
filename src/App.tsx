@@ -306,13 +306,6 @@ function departureDayLabel(date: Date, now: number, language: AppLanguage = 'ru'
   return isTomorrow ? 'завтра' : 'сегодня';
 }
 
-function formatDeparture(date: Date, now: number, locale = 'ru-RU', language: AppLanguage = 'ru'): string {
-  const time = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  if (date.toDateString() === tomorrow.toDateString()) return `${time} · ${departureDayLabel(date, now, language)}`;
-  return time;
-}
 
 interface TelegramUser { first_name?: string; last_name?: string; photo_url?: string }
 interface TelegramWebApp {
@@ -518,13 +511,13 @@ function App() {
   const [scheduleEntries, setScheduleEntries] = useState<TimetableEntry[]>([]);
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'loading' | 'ready' | 'empty' | 'error'>('idle');
   const [scheduleClock, setScheduleClock] = useState(Date.now());
-  const [scheduleTransportFilter, setScheduleTransportFilter] = useState('all');
-  const [expandedScheduleRoutes, setExpandedScheduleRoutes] = useState<string[]>([]);
+  const [scheduleTransportFilter] = useState('all');
+  const [, setExpandedScheduleRoutes] = useState<string[]>([]);
   const [scheduleViewOpen, setScheduleViewOpen] = useState(false);
   const [scheduleDateOffset, setScheduleDateOffset] = useState(0);
-  const [scheduleSearch, setScheduleSearch] = useState('');
+  const [scheduleSearch] = useState('');
   const [routePatterns, setRoutePatterns] = useState<RoutePattern[] | null>(null);
-  const [routePatternsStatus, setRoutePatternsStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [, setRoutePatternsStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [selectedRouteDetail, setSelectedRouteDetail] = useState<DepartureGroup | null>(null);
   const [activeTab, setActiveTab] = useState<'map' | 'favorites'>('map');
   const [showStopMarkers, setShowStopMarkers] = useState(true);
@@ -671,18 +664,6 @@ function App() {
   const fullDayDepartures = useMemo(() => buildDeparturesForDate(
     scheduleEntries, calendarData.calendar, calendarData.exceptions, selectedScheduleDate,
   ), [scheduleEntries, calendarData, selectedScheduleDate]);
-  const visibleFullDayDepartures = useMemo(() => {
-    const query = scheduleSearch.trim().toLocaleLowerCase('ru-RU');
-    return fullDayDepartures.filter(group => {
-      const matchesType = scheduleTransportFilter === 'all' || group.routeType === scheduleTransportFilter;
-      const matchesSearch = !query || group.route.toLocaleLowerCase('ru-RU').includes(query)
-        || group.headsign.toLocaleLowerCase('ru-RU').includes(query)
-        || group.routeName.toLocaleLowerCase('ru-RU').includes(query);
-      return matchesType && matchesSearch;
-    });
-  }, [fullDayDepartures, scheduleTransportFilter, scheduleSearch]);
-
-
   const activeReports = useMemo(() => reports.filter(report => report.createdAt !== undefined && scheduleClock - report.createdAt < REPORT_TTL_MS), [reports, scheduleClock]);
   const radarStopGroups = useMemo(() => {
     const groups = new Map<string, Report[]>();
