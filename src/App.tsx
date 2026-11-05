@@ -1148,7 +1148,6 @@ function App() {
                     </div>
                   </article>)}
                 </>}
-                </div>
                 <div className="schedule-footnote"><span>ⓘ</span> {t('plannedTimes')}</div>
               </div>
             </div>
