@@ -1135,3 +1135,31 @@ button:disabled { opacity: .65; cursor: wait; }
 .profile-footnote{display:flex;align-items:flex-start;gap:8px;padding:11px;line-height:1.55}.profile-footnote>span{flex:0 0 auto;color:#c5a76f}
 .profile-preferences{gap:7px}.profile-preferences label{min-height:54px;padding:10px 12px}.profile-preferences input{width:19px;height:19px}
 @media(max-width:380px){.profile-panel{padding:14px;border-radius:20px}.profile-identity{padding:12px}.profile-avatar{width:50px;height:50px;flex-basis:50px}.profile-language-options{gap:5px}.profile-language-options button{min-height:49px}}
+
+
+/* Community Radar — live-feeling local event markers and compact report controls. */
+.radar-pulse-marker{animation:radarPulse 1.8s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes radarPulse{0%{stroke-width:2;opacity:1}65%{stroke-width:9;opacity:.24}100%{stroke-width:2;opacity:1}}
+.radar-map-summary{display:inline-flex;align-items:center;gap:7px;min-height:37px;padding:0 13px;border:1px solid rgba(218,183,120,.34);border-radius:999px;color:#ead4a8;background:rgba(15,22,28,.92);box-shadow:0 8px 24px rgba(0,0,0,.22);backdrop-filter:blur(14px);font-size:11px;font-weight:750}
+.radar-map-summary i{width:8px;height:8px;border-radius:50%;background:#e9bd70;box-shadow:0 0 0 4px rgba(233,189,112,.14);animation:radarDot 1.6s ease-in-out infinite}
+@keyframes radarDot{50%{box-shadow:0 0 0 7px rgba(233,189,112,0)}}
+.radar-filter,.radar-scope-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0}
+.radar-filter button,.radar-scope-switch button{min-height:35px;padding:0 8px;border:1px solid rgba(255,255,255,.09);border-radius:10px;color:#aab5bd;background:rgba(255,255,255,.035);font-size:10px;font-weight:700}
+.radar-filter button.active,.radar-scope-switch button.active{border-color:rgba(218,183,120,.52);color:#f0d9aa;background:rgba(218,183,120,.12)}
+.radar-scope-switch{grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 12px}
+.radar-form-hint{margin:-4px 0 12px;color:#85919b;font-size:10px;line-height:1.5}
+.radar-vehicle-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.radar-vehicle-fields label{display:flex;min-width:0;flex-direction:column;gap:5px;color:#c9b487;font-size:9px;font-weight:750}
+.radar-vehicle-fields input{width:100%;min-width:0;height:42px;padding:0 10px;border:1px solid rgba(218,183,120,.2);border-radius:10px;outline:none;color:#f2f4f5;background:rgba(0,0,0,.2);font-size:14px}
+.radar-vehicle-fields input:focus{border-color:rgba(218,183,120,.65);box-shadow:0 0 0 3px rgba(218,183,120,.08)}
+.radar-vehicle-line{display:flex;align-items:center;gap:9px;margin:8px 0;color:#c5b084;font-size:10px}
+.radar-vehicle-line strong{display:grid;min-width:36px;height:28px;place-items:center;border:1px solid rgba(218,183,120,.35);border-radius:8px;color:#f1d7a4;background:rgba(218,183,120,.1);font-size:12px}
+.radar-vehicle-line span{color:#aab4bc}
+.radar-report-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px}
+.radar-report-footer small{color:#87939d;font-size:9px}
+.radar-report-footer button{min-height:29px;padding:0 9px;border:1px solid rgba(218,183,120,.22);border-radius:8px;color:#d9c394;background:rgba(218,183,120,.07);font-size:9px;font-weight:700}
+.radar-report-footer button:disabled{opacity:.5;color:#8b969f}
+.radar-local-note{display:flex;gap:8px;margin:12px 0;padding:10px 11px;border:1px solid rgba(218,183,120,.13);border-radius:11px;color:#87949d;background:rgba(218,183,120,.035);font-size:9px;line-height:1.55}
+.radar-local-note span{flex:0 0 auto;color:#d4b77e}
+.map-actions{align-items:flex-end}
+@media(max-width:380px){.radar-map-summary{min-height:34px;padding:0 10px;font-size:10px}.radar-vehicle-fields{gap:6px}.radar-vehicle-fields input{height:39px}.radar-report-footer{align-items:flex-start;flex-direction:column}}
