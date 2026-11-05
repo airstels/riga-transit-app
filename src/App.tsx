@@ -490,7 +490,7 @@ function App() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [quickReportOpen, setQuickReportOpen] = useState(false);
   const [quickStopQuery, setQuickStopQuery] = useState('');
-  const [scheduleCompactOpen, setScheduleCompactOpen] = useState(false);
+  const [scheduleCompactOpen, setScheduleCompactOpen] = useState(true);
   const [reportType, setReportType] = useState<ReportType>('delay');
   const [reportScope, setReportScope] = useState<ReportScope>('stop');
   const [reportRouteNumber, setReportRouteNumber] = useState('');
@@ -793,7 +793,7 @@ function App() {
   const addReport = () => {
     if (!selectedStop) return;
     const now = Date.now();
-    if (reportScope === 'vehicle' && (!/^\d{4,5}$/.test(reportVehicleNumber.trim()) || !reportRouteNumber.trim())) return;
+    if (reportScope === 'vehicle' && !/^\d{4,5}$/.test(reportVehicleNumber.trim())) return;
     const report: Report = {
       id: `${now}-${Math.random().toString(36).slice(2, 8)}`,
       stopId: selectedStop.id,
@@ -996,7 +996,7 @@ function App() {
                 <b>↗</b>
               </button>
             ))}
-            {quickStopQuery.trim() && !activeStops.some(stop => stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode))) && <small>{t('nothingFound')}</small>}
+            {quickStopQuery.trim() && !activeStops.some(stop => stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode)) || stop.routes?.some(route => route.includes(quickStopQuery.trim()))) && <small>{t('nothingFound')}</small>}
           </div>
           <div className="radar-composer-note">{t('radarComposerHint')}</div>
         </section>
@@ -1044,7 +1044,7 @@ function App() {
                 </div>
                 {!scheduleViewOpen && <div className="schedule-open-row">
                   <div><strong>{t('fullDay')}</strong><small>{t('allTrips')}</small></div>
-                  <button onClick={() => { setScheduleDateOffset(0); setScheduleSearch(''); setSelectedRouteDetail(null); setScheduleViewOpen(true); }}>{t('open')} <span>↗</span></button>
+                  <button onClick={() => { setScheduleCompactOpen(false); setScheduleDateOffset(0); setScheduleSearch(''); setSelectedRouteDetail(null); setScheduleViewOpen(true); }}>{t('open')} <span>↗</span></button>
                 </div>}
                 {scheduleStatus === 'loading' && <div className="schedule-state"><span className="schedule-spinner" />{t('loadingSchedule')}</div>}
                 {scheduleStatus === 'error' && <div className="schedule-state">{t('scheduleError')}</div>}
@@ -1078,7 +1078,7 @@ function App() {
                         {group.departures.length > 3 && <button className="schedule-expand" onClick={() => setExpandedScheduleRoutes(current => expanded ? current.filter(key => key !== group.key) : [...current, group.key])}>
                           {expanded ? t('collapse') : t('moreTrips') + ' ' + (group.departures.length - 3) + ' ' + (language === 'ru' ? 'рейсов' : language === 'lv' ? 'reisi' : 'departures')} <span>{expanded ? '⌃' : '⌄'}</span>
                         </button>}
-                        <button className="schedule-route-detail-link" onClick={() => { setScheduleDateOffset(0); setSelectedRouteDetail(group); setScheduleViewOpen(true); }}>{t('route')} <span>↗</span></button>
+                        <button className="schedule-route-detail-link" onClick={() => { setScheduleCompactOpen(false); setScheduleDateOffset(0); setSelectedRouteDetail(group); setScheduleViewOpen(true); }}>{t('route')} <span>↗</span></button>
                       </div>
                     </article>
                   );
@@ -1200,7 +1200,7 @@ function App() {
                 onChange={event => setReportText(event.target.value)} placeholder={t('commentPlaceholder')} />
               <div className="form-footer"><span>{reportText.length}/160</span>
                 <button className="secondary-button" onClick={() => setShowAddForm(false)}>{t('cancel')}</button>
-                <button className="primary-button compact" onClick={addReport} disabled={reportScope === 'vehicle' && (!/^\d{4,5}$/.test(reportVehicleNumber.trim()) || !reportRouteNumber.trim())}>{t('publish')}</button>
+                <button className="primary-button compact" onClick={addReport} disabled={reportScope === 'vehicle' && !/^\d{4,5}$/.test(reportVehicleNumber.trim())}>{t('publish')}</button>
               </div>
             </div>
           )}
