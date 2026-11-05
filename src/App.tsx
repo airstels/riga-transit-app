@@ -1047,7 +1047,7 @@ function App() {
                 onChange={event => setReportText(event.target.value)} placeholder={t('commentPlaceholder')} />
               <div className="form-footer"><span>{reportText.length}/160</span>
                 <button className="secondary-button" onClick={() => setShowAddForm(false)}>{t('cancel')}</button>
-                <button className="primary-button compact" onClick={addReport} disabled={reportScope === 'vehicle' && !/^\d{4,5}$/.test(reportVehicleNumber.trim())}>{t('publish')}</button>
+                <button className="primary-button compact" onClick={() => addReport()} disabled={reportScope === 'vehicle' && !/^\d{4,5}$/.test(reportVehicleNumber.trim())}>{t('publish')}</button>
               </div>
             </div>
           )}
