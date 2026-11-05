@@ -227,35 +227,6 @@ function buildUpcomingDepartures(entries: TimetableEntry[], calendar: CalendarSe
 }
 
 
-function buildDeparturesForDate(entries: TimetableEntry[], calendar: CalendarService[], exceptions: CalendarException[], targetDate: Date): DepartureGroup[] {
-  if (!calendar.length && !exceptions.length) return [];
-  const dayStart = new Date(targetDate);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(dayStart);
-  dayEnd.setDate(dayEnd.getDate() + 1);
-  const groups = new Map<string, DepartureGroup>();
-  for (let offset = 0; offset <= 2; offset++) {
-    const serviceDate = new Date(dayStart);
-    serviceDate.setDate(serviceDate.getDate() - offset);
-    for (const entry of entries) {
-      const [time, route, routeName, routeType, serviceId, headsign, directionId] = entry;
-      if (!serviceRunsOn(serviceId, serviceDate, calendar, exceptions)) continue;
-      const parts = time.split(':').map(Number);
-      if (parts.length !== 3 || parts.some(value => !Number.isFinite(value))) continue;
-      const departure = new Date(serviceDate.getTime() + (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000);
-      if (departure < dayStart || departure >= dayEnd) continue;
-      const key = route + '|' + headsign + '|' + directionId;
-      const group: DepartureGroup = groups.get(key) ?? { key, route, routeName, routeType, headsign, directionId, departures: [] };
-      group.departures.push(departure);
-      groups.set(key, group);
-    }
-  }
-  return Array.from(groups.values()).map(group => ({
-    ...group,
-    departures: group.departures.sort((a, b) => a.getTime() - b.getTime()),
-  })).sort((a, b) => (a.departures[0]?.getTime() ?? 0) - (b.departures[0]?.getTime() ?? 0));
-}
-
 function reportTypeLabel(type: ReportType, language: AppLanguage): string {
   const labels: Record<ReportType, Record<AppLanguage, string>> = {
     delay: { ru: 'Задержка', lv: 'Kavēšanās', en: 'Delay' },
@@ -507,7 +478,7 @@ function App() {
   const [scheduleTransportFilter] = useState('all');
   const [, setExpandedScheduleRoutes] = useState<string[]>([]);
   const [scheduleViewOpen, setScheduleViewOpen] = useState(false);
-  const [scheduleDateOffset, setScheduleDateOffset] = useState(0);
+  const [, setScheduleDateOffset] = useState(0);
   const [routePatterns, setRoutePatterns] = useState<RoutePattern[] | null>(null);
   const [, setRoutePatternsStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [selectedRouteDetail, setSelectedRouteDetail] = useState<DepartureGroup | null>(null);
@@ -647,12 +618,6 @@ function App() {
   ), [scheduleEntries, calendarData, scheduleClock]);
 
   const visibleDepartures = useMemo(() => scheduleTransportFilter === 'all' ? upcomingDepartures : upcomingDepartures.filter(group => group.routeType === scheduleTransportFilter), [upcomingDepartures, scheduleTransportFilter]);
-  const selectedScheduleDate = useMemo(() => {
-    const date = new Date(scheduleClock);
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() + scheduleDateOffset);
-    return date;
-  }, [scheduleClock, scheduleDateOffset]);
   const activeReports = useMemo(() => reports.filter(report => report.createdAt !== undefined && scheduleClock - report.createdAt < REPORT_TTL_MS), [reports, scheduleClock]);
   const radarStopGroups = useMemo(() => {
     const groups = new Map<string, Report[]>();
