@@ -1163,3 +1163,38 @@ button:disabled { opacity: .65; cursor: wait; }
 .radar-local-note span{flex:0 0 auto;color:#d4b77e}
 .map-actions{align-items:flex-end}
 @media(max-width:380px){.radar-map-summary{min-height:34px;padding:0 10px;font-size:10px}.radar-vehicle-fields{gap:6px}.radar-vehicle-fields input{height:39px}.radar-report-footer{align-items:flex-start;flex-direction:column}}
+
+
+/* Radar-first hierarchy and quick composer */
+.radar-add-main{display:flex;align-items:center;gap:9px;min-height:45px;padding:0 17px;border:1px solid rgba(235,201,143,.55);border-radius:14px;color:#171b1f;background:linear-gradient(135deg,#f0d7a5,#c7a66d);box-shadow:0 8px 28px rgba(0,0,0,.28);font-size:12px}
+.radar-add-main span{font-size:21px;line-height:1}.radar-add-main strong{font-weight:850}
+.radar-composer-backdrop{position:fixed;inset:0;z-index:1600;display:flex;align-items:flex-end;justify-content:center;padding:14px;background:rgba(4,8,12,.68);backdrop-filter:blur(8px)}
+.radar-composer{width:min(100%,520px);max-height:min(82dvh,760px);overflow:auto;padding:19px;border:1px solid rgba(218,183,120,.2);border-radius:22px 22px 18px 18px;background:rgba(16,23,29,.98);box-shadow:0 24px 80px rgba(0,0,0,.45)}
+.radar-composer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.radar-composer-head h2{margin:5px 0 0;color:#f3eee5;font-size:21px;font-weight:800}
+.radar-step{display:flex;align-items:center;gap:9px;margin:14px 0 9px;color:#e9d3a5;font-size:11px;font-weight:800}
+.radar-step>span{display:grid;width:23px;height:23px;place-items:center;border:1px solid rgba(218,183,120,.4);border-radius:50%;background:rgba(218,183,120,.1)}
+.radar-stop-search{width:100%;height:47px;padding:0 13px;border:1px solid rgba(218,183,120,.3);border-radius:12px;outline:none;color:#f3f5f6;background:rgba(255,255,255,.045);font-size:14px}
+.radar-stop-search:focus{border-color:#d8b87c;box-shadow:0 0 0 3px rgba(216,184,124,.1)}
+.radar-stop-results{display:flex;flex-direction:column;gap:5px;margin-top:9px}
+.radar-stop-results>button{display:flex;align-items:center;gap:10px;width:100%;min-height:53px;padding:8px 10px;border:1px solid rgba(255,255,255,.07);border-radius:11px;text-align:left;color:#edf0f2;background:rgba(255,255,255,.035)}
+.radar-stop-results>button>span:nth-child(2){display:flex;flex:1;flex-direction:column;gap:3px}.radar-stop-results strong{font-size:12px}.radar-stop-results small,.radar-stop-results>small{color:#8e9ba5;font-size:10px}.radar-stop-results b{color:#d9bc85}
+.radar-composer-note{margin-top:14px;color:#87939d;font-size:10px;line-height:1.55}
+.schedule-panel{margin-top:9px;padding:10px 11px!important;border-radius:13px!important}
+.schedule-panel-top{margin-bottom:0!important}
+.schedule-compact-toggle{display:flex;align-items:center;justify-content:space-between;gap:15px;width:100%;padding:2px 0;border:0;color:#e9d9b9;background:transparent;text-align:left;font-size:12px;font-weight:800}
+.schedule-compact-toggle small{display:grid;width:23px;height:23px;place-items:center;border:1px solid rgba(218,183,120,.2);border-radius:7px;color:#d7bb88;background:rgba(218,183,120,.07)}
+.schedule-panel-top>div{flex:1}
+.schedule-heading,.schedule-subtitle{display:none!important}
+.schedule-panel .schedule-filter{margin:8px 0 6px!important}
+.schedule-panel .schedule-route-card{padding:8px 9px!important;margin-top:6px!important;border-radius:10px!important}
+.schedule-panel .schedule-times{gap:5px!important}
+.schedule-panel .schedule-time{padding:4px 6px!important;font-size:10px!important}
+.schedule-panel .schedule-card-head{gap:6px!important}
+.schedule-panel .schedule-route-copy strong{font-size:10px!important}
+.schedule-panel .schedule-route-copy small,.schedule-panel .schedule-next small{font-size:8px!important}
+.schedule-panel .schedule-next strong{font-size:12px!important}
+.schedule-panel .schedule-open-row{margin-top:5px!important;padding:6px 0!important}
+.schedule-panel .schedule-state{padding:8px!important;font-size:10px!important}
+.schedule-panel .schedule-footnote{margin-top:6px!important;font-size:9px!important}
+.stop-sheet{z-index:1200}
+@media(max-width:430px){.radar-composer-backdrop{padding:8px}.radar-composer{padding:16px;border-radius:20px 20px 14px 14px}.radar-add-main{min-height:42px;padding:0 13px}.schedule-panel .schedule-route-card{padding:7px!important}}
