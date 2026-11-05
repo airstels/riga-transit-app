@@ -677,8 +677,8 @@ function App() {
 
 
   const selectedReports = useMemo(() => selectedStop
-    ? reports.filter(report => report.stopId === selectedStop.id).sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8)
-    : [], [reports, selectedStop]);
+    ? activeReports.filter(report => report.stopId === selectedStop.id && (radarFilter === 'all' || report.scope === radarFilter)).sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8)
+    : [], [activeReports, selectedStop, radarFilter]);
 
   const persistReports = (next: Report[]) => {
     const cutoff = Date.now() - REPORT_TTL_MS;
@@ -933,6 +933,10 @@ function App() {
 
       {activeTab === 'map' && (
         <div className="map-actions">
+          {activeReports.length > 0 && <button className="radar-map-summary" onClick={() => {
+            const firstStop = radarStopGroups[0]?.stop;
+            if (firstStop) { setRadarFilter('all'); selectStop(firstStop); }
+          }}><i /> <strong>{activeReports.length}</strong> {t('radarMapLabel')}</button>}
           <button className="map-action gps-button" onClick={locateMe} disabled={gpsState === 'loading'}>
             <span>{gpsState === 'loading' ? '…' : '◎'}</span>
             {gpsState === 'loading' ? t('locating') : t('whereAmI')}
@@ -1099,7 +1103,7 @@ function App() {
           </div>
           <div className="reports-list">
             {selectedReports.length === 0 ? (
-              <div className="empty-reports"><span>◌</span><p>{t('noReports')}</p><small>{t('addFirstReport')}</small></div>
+              <div className="empty-reports"><span>◌</span><p>{t('noReports')}</p><small>{radarFilter === 'all' ? t('addFirstReport') : t('noReportsFiltered')}</small></div>
             ) : selectedReports.map(report => {
               const type = REPORT_TYPES.find(item => item.id === report.type);
               return <article className="report-card" key={report.id}>
@@ -1116,12 +1120,13 @@ function App() {
           ) : (
             <div className="report-form">
               <div className="form-title">{t('whatHappens')}</div>
+              <div className="radar-form-hint">{t('radarIntro')}</div>
               <div className="radar-scope-switch">
                 <button className={reportScope === 'stop' ? 'active' : ''} onClick={() => setReportScope('stop')}>{t('radarStops')}</button>
                 <button className={reportScope === 'vehicle' ? 'active' : ''} onClick={() => setReportScope('vehicle')}>{t('radarVehicles')}</button>
               </div>
               {reportScope === 'vehicle' && <div className="radar-vehicle-fields">
-                <label><span>{t('routeNumber')}</span><input value={reportRouteNumber} onChange={event => setReportRouteNumber(event.target.value.replace(/\D/g, '').slice(0, 3))} inputMode="numeric" maxLength={3} placeholder="Например, 11" /></label>
+                <label><span>{t('routeNumber')}</span><input value={reportRouteNumber} onChange={event => setReportRouteNumber(event.target.value.replace(/\D/g, '').slice(0, 3))} inputMode="numeric" maxLength={3} placeholder={language === 'ru' ? 'Например, 11' : language === 'lv' ? 'Piemēram, 11' : 'e.g. 11'} /></label>
                 <label><span>{t('vehicleNumber')}</span><input value={reportVehicleNumber} onChange={event => setReportVehicleNumber(event.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" maxLength={5} placeholder="12345" /></label>
               </div>}
               <div className="report-type-grid">
@@ -1140,6 +1145,7 @@ function App() {
               </div>
             </div>
           )}
+          <div className="radar-local-note"><span>ⓘ</span>{t('radarLocalOnly')}</div>
           <div className="data-note"><span className="data-check">✓</span> {t('officialDataNote')} · {gtfsMetadata.importedAt}</div>
         </section>
       )}
