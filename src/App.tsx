@@ -984,9 +984,7 @@ function App() {
               : []
             ).map(stop => (
               <button key={stop.id} onClick={() => {
-                setSelectedStop(stop);
-                setMapTarget({ lat: stop.lat, lon: stop.lon });
-                setSearch(stop.name);
+                selectStop(stop);
                 setQuickReportOpen(false);
                 setShowAddForm(true);
                 setReportScope('vehicle');
@@ -1167,7 +1165,7 @@ function App() {
               const type = REPORT_TYPES.find(item => item.id === report.type);
               return <article className="report-card" key={report.id}>
                 <div className="report-meta"><span className={`report-tag ${type?.color ?? ''}`}>{type ? reportTypeLabel(type.id, language) : t('other')}</span><time>{report.time}</time></div>
-                {report.scope === 'vehicle' && <div className="radar-vehicle-line"><strong>№ {report.routeNumber}</strong><span>{t('vehicleNumber')} {report.vehicleNumber}</span></div>}
+                {report.scope === 'vehicle' && <div className="radar-vehicle-line">{report.routeNumber && <strong>№ {report.routeNumber}</strong>}<span>{t('vehicleNumber')} {report.vehicleNumber}</span></div>}
                 {report.text && <p>{report.text}</p>}
                 <div className="radar-report-footer"><small>{report.user ?? t('anonymous')} · {Math.max(0, Math.ceil((REPORT_TTL_MS - (scheduleClock - (report.createdAt ?? scheduleClock))) / 60000))} {t('minutesShort')}</small><button disabled={confirmedReportIds.includes(report.id)} onClick={() => confirmReport(report)}>{confirmedReportIds.includes(report.id) ? t('confirmed') : t('confirmReport')} · {report.confirmations ?? 0}</button></div>
               </article>;
