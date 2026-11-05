@@ -298,13 +298,6 @@ function transportIcon(type: string): string {
   return '🚌';
 }
 
-function departureDayLabel(date: Date, now: number, language: AppLanguage = 'ru'): string {
-  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
-  const isTomorrow = date.toDateString() === tomorrow.toDateString();
-  if (language === 'lv') return isTomorrow ? 'rīt' : 'šodien';
-  if (language === 'en') return isTomorrow ? 'tomorrow' : 'today';
-  return isTomorrow ? 'завтра' : 'сегодня';
-}
 
 
 interface TelegramUser { first_name?: string; last_name?: string; photo_url?: string }
@@ -515,7 +508,6 @@ function App() {
   const [, setExpandedScheduleRoutes] = useState<string[]>([]);
   const [scheduleViewOpen, setScheduleViewOpen] = useState(false);
   const [scheduleDateOffset, setScheduleDateOffset] = useState(0);
-  const [scheduleSearch] = useState('');
   const [routePatterns, setRoutePatterns] = useState<RoutePattern[] | null>(null);
   const [, setRoutePatternsStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [selectedRouteDetail, setSelectedRouteDetail] = useState<DepartureGroup | null>(null);
@@ -661,9 +653,6 @@ function App() {
     date.setDate(date.getDate() + scheduleDateOffset);
     return date;
   }, [scheduleClock, scheduleDateOffset]);
-  const fullDayDepartures = useMemo(() => buildDeparturesForDate(
-    scheduleEntries, calendarData.calendar, calendarData.exceptions, selectedScheduleDate,
-  ), [scheduleEntries, calendarData, selectedScheduleDate]);
   const activeReports = useMemo(() => reports.filter(report => report.createdAt !== undefined && scheduleClock - report.createdAt < REPORT_TTL_MS), [reports, scheduleClock]);
   const radarStopGroups = useMemo(() => {
     const groups = new Map<string, Report[]>();
