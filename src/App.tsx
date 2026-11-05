@@ -975,7 +975,29 @@ function App() {
           <div className="radar-vehicle-fields"><label><span>{t('routeNumber')}</span><input value={reportRouteNumber} onChange={event => setReportRouteNumber(event.target.value.replace(/\\D/g, '').slice(0, 3))} inputMode="numeric" placeholder="11" /></label><label><span>{t('vehicleNumber')}</span><input value={reportVehicleNumber} onChange={event => setReportVehicleNumber(event.target.value.replace(/\\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="12345" /></label></div>
           <div className="radar-step"><span>2</span><label>{t('searchStop')}</label></div>
           <input className="radar-stop-search" value={quickStopQuery} onChange={event => setQuickStopQuery(event.target.value)} placeholder={t('searchPlaceholder')} autoFocus />
-          <div className="radar-stop-results">{(quickStopQuery.trim() ? activeStops.filter(stop => stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode)) || stop.routes?.some(route => route.includes(quickStopQuery.trim())) : []).slice(0,6).map(stop => <button key={stop.id} onClick={() => { setSelectedStop(stop); setMapTarget({lat:stop.lat,lon:stop.lon}); setSearch(stop.name); setQuickReportOpen(false); setShowAddForm(true); setReportScope('vehicle'); }}><span className="result-pin">●</span><span><strong>{stop.name}</strong><small>{stop.routes?.length ? '№ ' + stop.routes.join(' · ') : t('stopSingular')}</small></span><b>↗</b></button>)}{quickStopQuery.trim() && !activeStops.some(stop => stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode))) && <small>{t('nothingFound')}</small>}</div>
+          <div className="radar-stop-results">
+            {(quickStopQuery.trim()
+              ? activeStops.filter(stop =>
+                  stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode)) ||
+                  stop.routes?.some(route => route.includes(quickStopQuery.trim()))
+                ).slice(0, 6)
+              : []
+            ).map(stop => (
+              <button key={stop.id} onClick={() => {
+                setSelectedStop(stop);
+                setMapTarget({ lat: stop.lat, lon: stop.lon });
+                setSearch(stop.name);
+                setQuickReportOpen(false);
+                setShowAddForm(true);
+                setReportScope('vehicle');
+              }}>
+                <span className="result-pin">●</span>
+                <span><strong>{stop.name}</strong><small>{stop.routes?.length ? '№ ' + stop.routes.join(' · ') : t('stopSingular')}</small></span>
+                <b>↗</b>
+              </button>
+            ))}
+            {quickStopQuery.trim() && !activeStops.some(stop => stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode))) && <small>{t('nothingFound')}</small>}
+          </div>
           <div className="radar-composer-note">{t('radarComposerHint')}</div>
         </section>
       </div>}
