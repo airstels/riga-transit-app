@@ -149,6 +149,8 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   noReportsFiltered: { ru: 'Нет сообщений по выбранному фильтру', lv: 'Nav ziņojumu izvēlētajā filtrā', en: 'No reports for this filter' },
   radarLocalOnly: { ru: 'Пока сообщения хранятся только на этом устройстве. Общая карта для всех пользователей появится после подключения серверной синхронизации.', lv: 'Pašlaik ziņojumi tiek glabāti tikai šajā ierīcē. Kopīga karte būs pieejama pēc servera sinhronizācijas pieslēgšanas.', en: 'Reports are currently stored on this device only. Shared reports will require server-side sync.' },
   radarMapLabel: { ru: 'Сообщения на карте', lv: 'Ziņojumi kartē', en: 'Reports on map' },
+  quickReport: { ru: 'Быстрое сообщение', lv: 'Ātrs ziņojums', en: 'Quick report' },
+  radarComposerHint: { ru: 'Выберите остановку — она подсветится на карте. Сообщение будет привязано к выбранному месту и транспорту.', lv: 'Izvēlieties pieturu — tā tiks izcelta kartē. Ziņojums tiks piesaistīts izvēlētajai vietai un transportam.', en: 'Choose a stop to highlight it on the map. Your report will be linked to that stop and vehicle.' },
   reportDelay: { ru: 'Задержка', lv: 'Kavēšanās', en: 'Delay' },
   reportCrowded: { ru: 'Переполненность', lv: 'Pārpildīts', en: 'Crowded' },
   reportDisruption: { ru: 'Сбой движения', lv: 'Kustības traucējumi', en: 'Service disruption' },
@@ -162,7 +164,7 @@ const I18N: Record<string, Record<AppLanguage, string>> = {
   scheduled: { ru: 'По расписанию', lv: 'Pēc saraksta', en: 'Scheduled' },
 };
 
-type ReportType = 'delay' | 'crowded' | 'disruption' | 'cleanliness' | 'accessibility';
+type ReportType = 'delay' | 'crowded' | 'disruption' | 'cleanliness' | 'accessibility' | 'verification';
 type ReportScope = 'stop' | 'vehicle';
 interface Report {
   id: string;
@@ -261,6 +263,7 @@ function reportTypeLabel(type: ReportType, language: AppLanguage): string {
     disruption: { ru: 'Сбой движения', lv: 'Kustības traucējumi', en: 'Service disruption' },
     cleanliness: { ru: 'Чистота', lv: 'Tīrība', en: 'Cleanliness' },
     accessibility: { ru: 'Доступность', lv: 'Pieejamība', en: 'Accessibility' },
+    verification: { ru: 'Проверка информации', lv: 'Informācijas pārbaude', en: 'Information check' },
   };
   return labels[type][language];
 }
@@ -335,6 +338,7 @@ const REPORT_TYPES: { id: ReportType; label: string; color: string; dot: string 
   { id: 'disruption', label: 'Сбой движения', color: 'bg-red-500/20 text-red-300', dot: '#ef4444' },
   { id: 'cleanliness', label: 'Чистота', color: 'bg-sky-500/20 text-sky-300', dot: '#38bdf8' },
   { id: 'accessibility', label: 'Доступность', color: 'bg-emerald-500/20 text-emerald-300', dot: '#10b981' },
+  { id: 'verification', label: 'Проверка информации', color: 'bg-violet-500/20 text-violet-300', dot: '#a78bfa' },
 ];
 function isReport(value: unknown): value is Report {
   if (!value || typeof value !== 'object') return false;
@@ -484,6 +488,9 @@ function App() {
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [quickReportOpen, setQuickReportOpen] = useState(false);
+  const [quickStopQuery, setQuickStopQuery] = useState('');
+  const [scheduleCompactOpen, setScheduleCompactOpen] = useState(false);
   const [reportType, setReportType] = useState<ReportType>('delay');
   const [reportScope, setReportScope] = useState<ReportScope>('stop');
   const [reportRouteNumber, setReportRouteNumber] = useState('');
@@ -781,6 +788,8 @@ function App() {
     persistReports(reports.map(item => item.id === report.id ? { ...item, confirmations: (item.confirmations ?? 0) + 1 } : item));
   };
 
+  const openQuickReport = () => { setQuickReportOpen(true); setQuickStopQuery(''); setReportScope('vehicle'); setReportType('delay'); setReportText(''); setReportRouteNumber(''); setReportVehicleNumber(''); };
+
   const addReport = () => {
     if (!selectedStop) return;
     const now = Date.now();
@@ -951,12 +960,25 @@ function App() {
             const firstStop = radarStopGroups[0]?.stop;
             if (firstStop) { setRadarFilter('all'); selectStop(firstStop); }
           }}><i /> <strong>{activeReports.length}</strong> {t('radarMapLabel')}</button>}
+          <button className="radar-add-main" onClick={openQuickReport}><span>＋</span><strong>{t('quickReport')}</strong></button>
           <button className="map-action gps-button" onClick={locateMe} disabled={gpsState === 'loading'}>
             <span>{gpsState === 'loading' ? '…' : '◎'}</span>
             {gpsState === 'loading' ? t('locating') : t('whereAmI')}
           </button>
         </div>
       )}
+
+      {quickReportOpen && <div className="radar-composer-backdrop" onClick={() => setQuickReportOpen(false)}>
+        <section className="radar-composer glass" role="dialog" aria-modal="true" aria-labelledby="radar-composer-title" onClick={event => event.stopPropagation()}>
+          <div className="radar-composer-head"><div><div className="panel-eyebrow">COMMUNITY RADAR</div><h2 id="radar-composer-title">{t('quickReport')}</h2></div><button className="close-sheet" onClick={() => setQuickReportOpen(false)} aria-label={t('close')}>×</button></div>
+          <div className="radar-step"><span>1</span><label>{t('vehicleNumber')}</label></div>
+          <div className="radar-vehicle-fields"><label><span>{t('routeNumber')}</span><input value={reportRouteNumber} onChange={event => setReportRouteNumber(event.target.value.replace(/\\D/g, '').slice(0, 3))} inputMode="numeric" placeholder="11" /></label><label><span>{t('vehicleNumber')}</span><input value={reportVehicleNumber} onChange={event => setReportVehicleNumber(event.target.value.replace(/\\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="12345" /></label></div>
+          <div className="radar-step"><span>2</span><label>{t('searchStop')}</label></div>
+          <input className="radar-stop-search" value={quickStopQuery} onChange={event => setQuickStopQuery(event.target.value)} placeholder={t('searchPlaceholder')} autoFocus />
+          <div className="radar-stop-results">{(quickStopQuery.trim() ? activeStops.filter(stop => stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode)) || stop.routes?.some(route => route.includes(quickStopQuery.trim())) : []).slice(0,6).map(stop => <button key={stop.id} onClick={() => { setSelectedStop(stop); setMapTarget({lat:stop.lat,lon:stop.lon}); setSearch(stop.name); setQuickReportOpen(false); setShowAddForm(true); setReportScope('vehicle'); }}><span className="result-pin">●</span><span><strong>{stop.name}</strong><small>{stop.routes?.length ? '№ ' + stop.routes.join(' · ') : t('stopSingular')}</small></span><b>↗</b></button>)}{quickStopQuery.trim() && !activeStops.some(stop => stop.name.toLocaleLowerCase(localeCode).includes(quickStopQuery.trim().toLocaleLowerCase(localeCode))) && <small>{t('nothingFound')}</small>}</div>
+          <div className="radar-composer-note">{t('radarComposerHint')}</div>
+        </section>
+      </div>}
 
       {activeTab === 'map' && gpsError && <div className="gps-error" role="status">{gpsError}<button onClick={() => setGpsError('')}>×</button></div>}
 
@@ -985,12 +1007,14 @@ function App() {
               )}
               <div className="schedule-panel">
                 <div className="schedule-panel-top">
+                  <button className="schedule-compact-toggle" onClick={() => setScheduleCompactOpen(value => !value)} aria-expanded={scheduleCompactOpen}><span>{t('departures')}</span><small>{scheduleCompactOpen ? '⌃' : '⌄'}</small></button>
                   <div>
                     <div className="schedule-heading"><span>{t('departures')}</span><small>{t('officialSchedule')}</small></div>
                     <div className="schedule-subtitle">{t('nearestDepartures')}</div>
                   </div>
                   <span className="schedule-live-dot" aria-label={t('officialSchedule')} />
                 </div>
+                {!scheduleCompactOpen && <>
                 <div className="schedule-filter" role="group" aria-label={t('all')}>
                   {[{id:'all',label:t('all')}, {id:'3',label:t('buses')}, {id:'11',label:t('trolleybuses')}, {id:'0',label:t('trams')}].map(filter => (
                     <button key={filter.id} className={scheduleTransportFilter === filter.id ? 'active' : ''} onClick={() => setScheduleTransportFilter(filter.id)}>{filter.label}</button>
@@ -1104,6 +1128,7 @@ function App() {
                     </div>
                   </article>)}
                   <div className="schedule-footnote"><span>ⓘ</span> {t('plannedTimes')}</div>
+                </>}
                 </div>}
                 <div className="schedule-footnote"><span>ⓘ</span> {t('plannedTimes')}</div>
               </div>
