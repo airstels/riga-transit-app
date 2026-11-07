@@ -5,9 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "test:gtfs": "python3 -m unittest discover -s scripts/tests -v"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
